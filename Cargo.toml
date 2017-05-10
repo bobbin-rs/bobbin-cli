@@ -1,0 +1,14 @@
+[package]
+name = "bobbin"
+version = "0.1.0"
+authors = ["Jonathan Soo <jcsoo@agora.com>"]
+
+[lib]
+name = "bobbin"
+path = "src/bobbin/lib.rs"
+
+[dependencies]
+clap = "2.23"
+error-chain = "0.10"
+toml = "0.3"
+term = "0.4.5"
