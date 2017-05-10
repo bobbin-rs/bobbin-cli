@@ -3,7 +3,6 @@
 #[macro_use]
 extern crate error_chain;
 extern crate clap;
-extern crate bobbin;
 extern crate term;
 
 use clap::{Arg, App, SubCommand};
@@ -12,8 +11,7 @@ use errors::*;
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain! {
-        links {
-            Bobbin(::bobbin::Error, ::bobbin::ErrorKind);
+        links {            
         }
     }
 }
@@ -79,6 +77,7 @@ fn run() -> Result<()> {
         )
         .get_matches();
 
+    
     // if let Some(cmd_args) = args.subcommand_matches("list") {        
     //     try!(cmd_list(&args, cmd_args));
     // } else if let Some(cmd_args) = args.subcommand_matches("load") {
