@@ -7,4 +7,4 @@ authors = ["Jonathan Soo <jcsoo@agora.com>"]
 clap = "2.23"
 error-chain = "0.10"
 toml = "0.3"
-term = "0.4.5"
+termcolor = "0.3.2"

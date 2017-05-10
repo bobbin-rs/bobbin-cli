@@ -3,15 +3,22 @@
 #[macro_use]
 extern crate error_chain;
 extern crate clap;
-extern crate term;
+extern crate termcolor;
+
+pub mod printer;
 
 use clap::{Arg, App, SubCommand};
+//use std::io::Write;
+
 
 use errors::*;
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain! {
         links {            
+        }
+        foreign_links {
+            Io(::std::io::Error);
         }
     }
 }
@@ -98,5 +105,11 @@ fn run() -> Result<()> {
     //     println!("{}", args.usage());
     // }
     let _ = args;
+
+    let mut p = printer::printer().with_verbose(args.is_present("verbose"));
+
+    p.verbose("Debug", "Verbose Message")?;
+    p.info("Testing", "Hello, World!")?;
+    p.error("Error","Code Red!")?;
     Ok(())
 }
