@@ -31,10 +31,20 @@ pub trait Device {
     fn hash(&self) -> String {
         self.usb().hash()
     }
-    fn is_unknown(&self) -> bool { false }
-    fn device_type(&self) -> Option<&str>;
+    fn is_unknown(&self) -> bool { self.device_type().is_none() }
+    fn device_type(&self) -> Option<&str> { None }
+    fn loader_type(&self) -> Option<&str> { None }
+    fn debugger_type(&self) -> Option<&str> { None }
     fn cdc_path(&self) -> Option<String> { None }
     fn msd_path(&self) -> Option<PathBuf> { None }
+    
+    fn jlink_supported(&self) -> bool {
+        self.device_type() == Some("JLink")
+    }
+
+    fn openocd_supported(&self) -> bool {
+        self.openocd_serial().is_some()
+    }
     fn openocd_serial(&self) -> Option<String> { None }
 }
 
@@ -45,12 +55,6 @@ pub struct UnknownDevice {
 impl Device for UnknownDevice {
     fn usb(&self) -> &UsbDevice {
         &self.usb
-    }
-    fn is_unknown(&self) -> bool { 
-       true
-    }
-    fn device_type(&self) -> Option<&str> {
-        None
     }
 }
 
@@ -64,6 +68,14 @@ impl Device for JLinkDevice {
     }
 
     fn device_type(&self) -> Option<&str> {
+        Some("JLink")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("JLink")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
         Some("JLink")
     }
 
@@ -92,6 +104,14 @@ impl Device for StLinkV2Device {
         Some("STLinkV2")
     }
 
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
+
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("hla_serial {}", self.usb.serial_number))
     }    
@@ -109,6 +129,14 @@ impl Device for StLinkV21Device {
     fn device_type(&self) -> Option<&str> {
         Some("STLinkV21")
     }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
 
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
@@ -135,6 +163,14 @@ impl Device for TiIcdiDevice {
         Some("TI-ICDI")
     }
 
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
+
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", &self.usb.serial_number[..7], 1))
     }    
@@ -142,6 +178,39 @@ impl Device for TiIcdiDevice {
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("hla_serial {}", self.usb.serial_number))
     }        
+}
+
+pub struct CmsisDapDevice {
+    usb: UsbDevice,
+}
+
+impl Device for CmsisDapDevice {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("DAPLink")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
+
+    fn cdc_path(&self) -> Option<String> {
+        Some(format!("/dev/cu.usbmodem{}{}", 
+            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            2,
+        ))
+    }
+
+    fn openocd_serial(&self) -> Option<String> {
+        Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
+    }       
 }
 
 pub struct DapLinkDevice {
@@ -156,6 +225,14 @@ impl Device for DapLinkDevice {
     fn device_type(&self) -> Option<&str> {
         Some("DAPLink")
     }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("DAPLink")
+    }
+    
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }    
 
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
@@ -188,9 +265,45 @@ impl Device for DapLinkDevice {
 
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
-    }    
-    
+    }       
 }
+
+pub struct FeatherDevice {
+    usb: UsbDevice,
+}
+
+impl Device for FeatherDevice {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("Feather")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("Bossa")
+    }
+}
+
+pub struct TeensyDevice {
+    usb: UsbDevice,
+}
+
+impl Device for TeensyDevice {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("Teensy")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("Teensy")
+    }
+}
+
 
 pub struct DeviceFilter {
     all: bool,
@@ -209,12 +322,16 @@ impl<'a> From<&'a ArgMatches<'a>> for DeviceFilter {
 pub fn lookup(usb: UsbDevice) -> Box<Device> {
     match (usb.vendor_id, usb.product_id) {
         (0x0d28, 0x0204) => Box::new(DapLinkDevice { usb: usb }),
-        (0x03eb, 0x2157) => Box::new(DapLinkDevice { usb: usb }),
+        (0x03eb, 0x2157) => Box::new(CmsisDapDevice { usb: usb }),
         (0x0483, 0x3748) => Box::new(StLinkV2Device { usb: usb }),
         (0x0483, 0x374b) => Box::new(StLinkV21Device { usb: usb }),
         (0x1366, 0x0101) => Box::new(JLinkDevice { usb: usb }),
         (0x1366, 0x0105) => Box::new(JLinkDevice { usb: usb }),
         (0x1cbe, 0x00fd) => Box::new(TiIcdiDevice { usb: usb }),
+        (0x239a, 0x800b) => Box::new(FeatherDevice { usb: usb }),
+        (0x239a, 0x000b) => Box::new(FeatherDevice { usb: usb }),
+        (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
+        (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
         _ => Box::new(UnknownDevice { usb: usb })
     }
 }

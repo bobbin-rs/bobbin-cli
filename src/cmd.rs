@@ -42,12 +42,18 @@ pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     for d in devices?.iter() {
         let u = d.usb();        
         writeln!(out, "{:16} {}", "ID", d.hash())?;
-        writeln!(out, "{:16} {}", "Type", d.device_type().unwrap_or("Unknown"))?;
         writeln!(out, "{:16} {:04x}", "Vendor ID", u.vendor_id)?;
         writeln!(out, "{:16} {:04x}", "Product ID", u.product_id)?;
         writeln!(out, "{:16} {}", "Vendor", u.vendor_string)?;
         writeln!(out, "{:16} {}", "Product", u.product_string)?;
         writeln!(out, "{:16} {}", "Serial Number", u.serial_number)?;
+        writeln!(out, "{:16} {}", "Type", d.device_type().unwrap_or("Unknown"))?;
+        if let Some(loader_type) = d.loader_type() {
+            writeln!(out, "{:16} {}", "Loader Type", loader_type)?;
+        }
+        if let Some(debugger_type) = d.debugger_type() {
+            writeln!(out, "{:16} {}", "Debugger Type", debugger_type)?;
+        }        
         if let Some(cdc_path) = d.cdc_path() {
             writeln!(out, "{:16} {}", "CDC Device", cdc_path)?;
         }
