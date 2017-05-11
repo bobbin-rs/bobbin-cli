@@ -4,6 +4,7 @@ use clap::ArgMatches;
 use std::path::PathBuf;
 use std::fs;
 use std::io::Read;
+use config::Config;
 use Result;
 
 #[derive(Debug)]
@@ -317,6 +318,19 @@ impl<'a> From<&'a ArgMatches<'a>> for DeviceFilter {
             device: other.value_of("device").map(String::from)
         }
     }
+}
+
+pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceFilter {    
+    let device = if let Some(d) = args.value_of("device") {
+        Some(String::from(d))
+    } else {
+        cfg.default_device()
+    };
+
+    DeviceFilter {
+        all: args.is_present("all"),
+        device: device,
+    }    
 }
 
 pub fn lookup(usb: UsbDevice) -> Box<Device> {

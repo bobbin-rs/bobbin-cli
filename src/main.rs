@@ -65,12 +65,12 @@ fn run() -> Result<()> {
     let cfg = config::config(&args)?;
     let mut out = printer::printer().with_verbose(args.is_present("verbose"));
 
-    if let Some(_) = args.subcommand_matches("list") {        
-        cmd::list(&cfg, &args, &mut out)
-    } else if let Some(_) = args.subcommand_matches("info") {        
-        cmd::info(&cfg, &args, &mut out)
-    } else if let Some(_) = args.subcommand_matches("build") {        
-        cmd::build(&cfg, &args, &mut out)
+    if let Some(cmd_args) = args.subcommand_matches("list") {        
+        cmd::list(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("info") {        
+        cmd::info(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("build") {        
+        cmd::build(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("load") {        
         cmd::load(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("run") {        

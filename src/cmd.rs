@@ -9,8 +9,8 @@ use loader;
 use debugger;
 use console;
 
-pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
-    let filter = device::DeviceFilter::from(args);
+pub fn list(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter);
 
     writeln!(out, "{:08} {:04}:{:04} {:24} {:32} {:24}", 
@@ -37,8 +37,8 @@ pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
 }
 
 
-pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
-    let filter = device::DeviceFilter::from(args);
+pub fn info(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter)?;
 
     for d in devices.iter() {
@@ -70,13 +70,13 @@ pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     Ok(())
 }
 
-pub fn build(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
-    let dst = builder::build(cfg, args, args.subcommand_matches("build").unwrap(), out)?;
+pub fn build(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let dst = builder::build(cfg, args, args, out)?;
     Ok(())
 }
 
 pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
-    let filter = device::DeviceFilter::from(args);
+    let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
     let device = if devices.len() == 0 {
@@ -129,7 +129,7 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
 }
 
 pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {    
-    let filter = device::DeviceFilter::from(args);
+    let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
     let device = if devices.len() == 0 {

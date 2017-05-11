@@ -27,12 +27,18 @@ impl Config {
             .as_table().unwrap()["target"]
             .as_str().map(PathBuf::from)
     }
-    
+
     pub fn default_binary(&self) -> Option<PathBuf> {
         self.cargo["package"]
             .as_table().unwrap()["name"]
             .as_str().map(PathBuf::from)
     }
+
+    pub fn default_device(&self) -> Option<String> {
+        self.bobbin_cfg["filter"]
+            .as_table().unwrap()["device"]
+            .as_str().map(String::from)
+    }    
 }
 
 pub fn read_cargo_config() -> Result<Value> {
