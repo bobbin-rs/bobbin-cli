@@ -33,7 +33,7 @@ pub trait Device {
     }
     fn is_unknown(&self) -> bool { false }
     fn device_type(&self) -> Option<&str>;
-    fn serial_path(&self) -> Option<String> { None }
+    fn cdc_path(&self) -> Option<String> { None }
     fn msd_path(&self) -> Option<PathBuf> { None }
     fn openocd_serial(&self) -> Option<String> { None }
 }
@@ -67,7 +67,7 @@ impl Device for JLinkDevice {
         Some("JLink")
     }
 
-    fn serial_path(&self) -> Option<String> {
+    fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             1,
@@ -110,7 +110,7 @@ impl Device for StLinkV21Device {
         Some("STLinkV21")
     }
 
-    fn serial_path(&self) -> Option<String> {
+    fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             3,
@@ -135,7 +135,7 @@ impl Device for TiIcdiDevice {
         Some("TI-ICDI")
     }
 
-    fn serial_path(&self) -> Option<String> {
+    fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", &self.usb.serial_number[..7], 1))
     }    
 
@@ -157,7 +157,7 @@ impl Device for DapLinkDevice {
         Some("DAPLink")
     }
 
-    fn serial_path(&self) -> Option<String> {
+    fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             2,
