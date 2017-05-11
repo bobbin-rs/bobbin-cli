@@ -8,12 +8,16 @@ extern crate toml;
 extern crate sha1;
 extern crate plist;
 extern crate termcolor;
+extern crate tempfile;
 
 mod app;
 mod cmd;
 mod config;
 mod device;
 mod ioreg;
+mod builder;
+mod loader;
+mod debugger;
 mod printer;
 
 
@@ -62,6 +66,10 @@ fn run() -> Result<()> {
         cmd::list(&cfg, &args, &mut out)
     } else if let Some(_) = args.subcommand_matches("info") {        
         cmd::info(&cfg, &args, &mut out)
+    } else if let Some(_) = args.subcommand_matches("build") {        
+        cmd::build(&cfg, &args, &mut out)
+    } else if let Some(_) = args.subcommand_matches("load") {        
+        cmd::load(&cfg, &args, &mut out)
     } else {
         println!("{}", args.usage());
         Ok(())

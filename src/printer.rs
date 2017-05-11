@@ -15,6 +15,10 @@ pub struct Printer {
 }
 
 impl Printer {
+    pub fn is_verbose(&self) -> bool {
+        self.verbose
+    }
+
     pub fn with_verbose(self, value: bool) -> Self {
         Printer {
             out: self.out,

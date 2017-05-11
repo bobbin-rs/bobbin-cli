@@ -3,7 +3,7 @@ use Result;
 use toml::value::{Value, Table};
 use std::io::Read;
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 
 pub fn config(args: &ArgMatches) -> Result<Config> {
@@ -19,6 +19,20 @@ pub struct Config {
     bobbin_cfg: Value,
     cargo_cfg: Value,
     cargo: Value,
+}
+
+impl Config {
+    pub fn default_target(&self) -> Option<PathBuf> {
+        self.cargo_cfg["build"]
+            .as_table().unwrap()["target"]
+            .as_str().map(PathBuf::from)
+    }
+    
+    pub fn default_binary(&self) -> Option<PathBuf> {
+        self.cargo["package"]
+            .as_table().unwrap()["name"]
+            .as_str().map(PathBuf::from)
+    }
 }
 
 pub fn read_cargo_config() -> Result<Value> {

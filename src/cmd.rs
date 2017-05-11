@@ -3,28 +3,28 @@ use clap::ArgMatches;
 use config::Config;
 use printer::Printer;
 use std::io::Write;
-use device::{self};
+use device;
+use builder;
+use loader;
 
 pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     let filter = device::DeviceFilter::from(args);
     let devices = device::search(&filter);
 
-    writeln!(out, "{:08} {:04}:{:04} {:12} {:24} {:32} {:24}", 
+    writeln!(out, "{:08} {:04}:{:04} {:24} {:32} {:24}", 
         "ID",
         "VID", 
         "PID", 
-        "Type",
         "Vendor", 
         "Product",
         "Serial Number",
         )?;        
     for d in devices?.iter() {
         let u = d.usb();
-        write!(out, "{:08} {:04x}:{:04x} {:12} {:24} {:32} {:24}",
+        write!(out, "{:08} {:04x}:{:04x} {:24} {:32} {:24}",
             &d.hash()[..8],
             u.vendor_id, 
             u.product_id, 
-            d.device_type().unwrap_or(""),
             u.vendor_string, 
             u.product_string,
             u.serial_number,
@@ -37,9 +37,9 @@ pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
 
 pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     let filter = device::DeviceFilter::from(args);
-    let devices = device::search(&filter);
+    let devices = device::search(&filter)?;
 
-    for d in devices?.iter() {
+    for d in devices.iter() {
         let u = d.usb();        
         writeln!(out, "{:16} {}", "ID", d.hash())?;
         writeln!(out, "{:16} {:04x}", "Vendor ID", u.vendor_id)?;
@@ -65,5 +65,46 @@ pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
         }
         writeln!(out, "")?;
     }
+    Ok(())
+}
+
+pub fn build(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let dst = builder::build(cfg, args, args.subcommand_matches("build").unwrap(), out)?;
+    Ok(())
+}
+
+pub fn load(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let cmd_args = args.subcommand_matches("load").unwrap();
+    let filter = device::DeviceFilter::from(args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };
+    
+    let ldr = if let Some(ldr) = device.loader_type() {
+        out.verbose("loader",ldr)?;
+        if let Some(ldr) = loader::loader(ldr) {
+            ldr
+        } else {
+            bail!("Unknown loader type: {}", ldr);
+        }
+    } else {
+        bail!("Selected device has no associated loader");
+    };
+
+    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+        dst
+    } else {
+        bail!("No build output available to load");
+    };
+    out.verbose("target", &format!("{}", dst.display()))?;
+    
+    ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
+
     Ok(())
 }
