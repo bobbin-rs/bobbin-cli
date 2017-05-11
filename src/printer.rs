@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 
@@ -47,5 +47,14 @@ impl Printer {
 
     pub fn error(&mut self, label: &str, msg: &str) -> ::std::io::Result<()> {
         self.msg(Color::Red, label, msg)
+    }
+}
+
+impl Write for Printer {
+    fn write(&mut self, buf: &[u8]) -> ::std::io::Result<usize> {
+        self.out.write(buf)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.out.flush()
     }
 }

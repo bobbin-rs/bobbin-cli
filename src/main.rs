@@ -1,14 +1,20 @@
+#![allow(dead_code, unused_variables)]
 #![recursion_limit = "1024"]
 
 #[macro_use]
 extern crate error_chain;
 extern crate clap;
+extern crate toml;
+extern crate sha1;
+extern crate plist;
 extern crate termcolor;
 
-pub mod printer;
-
-use clap::{Arg, App, SubCommand};
-//use std::io::Write;
+mod app;
+mod cmd;
+mod config;
+mod device;
+mod ioreg;
+mod printer;
 
 
 use errors::*;
@@ -18,7 +24,9 @@ mod errors {
         links {            
         }
         foreign_links {
-            Io(::std::io::Error);
+            Io(::std::io::Error);            
+            PList(::plist::Error);
+            Toml(::toml::de::Error);
         }
     }
 }
@@ -46,44 +54,18 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let args = App::new("bobbin")
-        .version("0.1")
-        .arg(Arg::with_name("verbose").long("verbose").short("v"))
-        .arg(Arg::with_name("device").long("device").short("d").takes_value(true))
-        .subcommand(SubCommand::with_name("list")
-            .arg(Arg::with_name("all").long("all"))
-        )
-        .subcommand(SubCommand::with_name("load")            
-            .arg(Arg::with_name("target").long("target").takes_value(true))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true))
-            .arg(Arg::with_name("example").long("example").takes_value(true))
-            .arg(Arg::with_name("release").long("release"))
-            .arg(Arg::with_name("features").long("features"))
-            .arg(Arg::with_name("console").long("console").min_values(0).max_values(1))
-        )
-        .subcommand(SubCommand::with_name("run")            
-            .arg(Arg::with_name("target").long("target").takes_value(true))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true))
-            .arg(Arg::with_name("example").long("example").takes_value(true))
-            .arg(Arg::with_name("release").long("release"))
-            .arg(Arg::with_name("features").long("features").takes_value(true))
-            .arg(Arg::with_name("console").long("console").min_values(0).max_values(1))
-        )
-        .subcommand(SubCommand::with_name("halt"))
-        .subcommand(SubCommand::with_name("resume")
-            .arg(Arg::with_name("console").long("console").min_values(0).max_values(1))
-        )
-        .subcommand(SubCommand::with_name("reset")
-            .arg(Arg::with_name("run").long("run"))
-            .arg(Arg::with_name("halt").long("halt"))
-            .arg(Arg::with_name("init").long("init"))
-            .arg(Arg::with_name("console").long("console").min_values(0).max_values(1))
-        )
-        .subcommand(SubCommand::with_name("console")
-            .arg(Arg::with_name("console").long("console").min_values(0).max_values(1))
-        )
-        .get_matches();
+    let args = app::app().get_matches();
+    let cfg = config::config(&args)?;
+    let mut out = printer::printer().with_verbose(args.is_present("verbose"));
 
+    if let Some(_) = args.subcommand_matches("list") {        
+        cmd::list(&cfg, &args, &mut out)
+    } else if let Some(_) = args.subcommand_matches("info") {        
+        cmd::info(&cfg, &args, &mut out)
+    } else {
+        println!("{}", args.usage());
+        Ok(())
+    }
     
     // if let Some(cmd_args) = args.subcommand_matches("list") {        
     //     try!(cmd_list(&args, cmd_args));
@@ -103,13 +85,5 @@ fn run() -> Result<()> {
     //     try!(cmd_debug(&args, cmd_args));
     // } else {
     //     println!("{}", args.usage());
-    // }
-    let _ = args;
-
-    let mut p = printer::printer().with_verbose(args.is_present("verbose"));
-
-    p.verbose("Debug", "Verbose Message")?;
-    p.info("Testing", "Hello, World!")?;
-    p.error("Error","Code Red!")?;
-    Ok(())
+    // }    
 }

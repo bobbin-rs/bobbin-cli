@@ -6,5 +6,8 @@ authors = ["Jonathan Soo <jcsoo@agora.com>"]
 [dependencies]
 clap = "2.23"
 error-chain = "0.10"
+sha1 = "0.2.0"
+plist = "0.1"
+serial = "0.3"
 toml = "0.3"
 termcolor = "0.3.2"
