@@ -30,7 +30,11 @@ impl Load for OpenOcdLoader {
         let mut cmd = Command::new("openocd");
         cmd.arg("--file").arg("openocd.cfg");
         cmd.arg("--command").arg(&device.openocd_serial().unwrap());
-        cmd.arg("--command").arg(&format!("program {} exit", target.display()));
+        if args.is_present("run") {
+            cmd.arg("--command").arg(&format!("program {} reset exit", target.display()));            
+        } else {            
+            cmd.arg("--command").arg(&format!("program {} exit", target.display()));
+        }
 
         out.verbose("openocd",&format!("{:?}", cmd))?;
 
@@ -59,7 +63,7 @@ impl Load for JLinkLoader {
         try!(writeln!(tmpfile, "r"));
         try!(writeln!(tmpfile, "h"));
         try!(writeln!(tmpfile, "loadfile {}", dst.display()));
-        if cmd_args.is_present("run") {
+        if args.is_present("run") {
             try!(writeln!(tmpfile, "g"));
         }
         try!(writeln!(tmpfile, "exit"));
