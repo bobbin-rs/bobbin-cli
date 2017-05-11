@@ -27,7 +27,21 @@ pub struct OpenOcdLoader {}
 
 impl Load for OpenOcdLoader {
     fn load(&self, cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer, device: &Device, target: &Path) -> Result<()> {
-        unimplemented!()
+        let mut cmd = Command::new("openocd");
+        cmd.arg("--file").arg("openocd.cfg");
+        cmd.arg("--command").arg(&device.openocd_serial().unwrap());
+        cmd.arg("--command").arg(&format!("program {} exit", target.display()));
+
+        out.verbose("openocd",&format!("{:?}", cmd))?;
+
+        out.info("Loading",&format!("{}", target.display()))?;
+        if out.is_verbose() {
+            cmd.spawn()?.wait()?;
+        } else {
+            cmd.output()?;
+        }
+        out.info("Complete",&format!("Successfully flashed device"))?;       
+        Ok(()) 
     }
 }
 

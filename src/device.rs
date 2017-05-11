@@ -227,7 +227,7 @@ impl Device for DapLinkDevice {
     }
 
     fn loader_type(&self) -> Option<&str> {
-        Some("DAPLink")
+        Some("OpenOCD")
     }
     
     fn debugger_type(&self) -> Option<&str> {

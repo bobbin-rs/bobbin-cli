@@ -6,6 +6,7 @@ use std::io::Write;
 use device;
 use builder;
 use loader;
+use debugger;
 
 pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     let filter = device::DeviceFilter::from(args);
@@ -105,6 +106,48 @@ pub fn load(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     out.verbose("target", &format!("{}", dst.display()))?;
     
     ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
+
+    Ok(())
+}
+
+pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {    
+    let filter = device::DeviceFilter::from(args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };
+
+    let dbg = if let Some(dbg) = device.debugger_type() {
+        out.verbose("debugger",dbg)?;
+        if let Some(dbg) = debugger::debugger(dbg) {
+            dbg
+        } else {
+            bail!("Unknown debugger type: {}", dbg);
+        }
+    } else {
+        bail!("Selected device has no associated loader");
+    };
+    
+    if let Some(_) = args.subcommand_matches("halt") {
+        dbg.halt(cfg, args, cmd_args, out, device.as_ref())?;
+    } else if let Some(_) = args.subcommand_matches("resume") {
+        dbg.resume(cfg, args, cmd_args, out, device.as_ref())?;
+    } else if let Some(_) = args.subcommand_matches("reset") {
+        if cmd_args.is_present("run") {
+            dbg.reset_run(cfg, args, cmd_args, out, device.as_ref())?;
+        } else if cmd_args.is_present("halt") {
+            dbg.reset_halt(cfg, args, cmd_args, out, device.as_ref())?;
+        } else if cmd_args.is_present("init") {
+            dbg.reset_init(cfg, args, cmd_args, out, device.as_ref())?;
+        } else {
+            dbg.reset(cfg, args, cmd_args, out, device.as_ref())?;
+        }
+    }
 
     Ok(())
 }
