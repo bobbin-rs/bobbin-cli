@@ -7,6 +7,7 @@ extern crate clap;
 extern crate toml;
 extern crate sha1;
 extern crate plist;
+extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
 
@@ -19,6 +20,7 @@ mod builder;
 mod loader;
 mod debugger;
 mod printer;
+mod console;
 
 
 use errors::*;
@@ -28,9 +30,10 @@ mod errors {
         links {            
         }
         foreign_links {
-            Io(::std::io::Error);            
+            Io(::std::io::Error);
             PList(::plist::Error);
             Toml(::toml::de::Error);
+            Serial(::serial::Error);
         }
     }
 }

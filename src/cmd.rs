@@ -7,6 +7,7 @@ use device;
 use builder;
 use loader;
 use debugger;
+use console;
 
 pub fn list(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     let filter = device::DeviceFilter::from(args);
@@ -104,10 +105,26 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     };
     out.verbose("target", &format!("{}", dst.display()))?;
     
+    let con = if cmd_args.is_present("console") {
+        if let Some(cdc_path) = device.cdc_path() {
+            let mut con = console::open(&cdc_path)?;
+            con.clear()?;
+            Some(con)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
 
     out.info("loader", "Load Complete")?;
-    
+
+    if let Some(mut con) = con {
+        con.view()?;
+    }
+
     Ok(())
 }
 
