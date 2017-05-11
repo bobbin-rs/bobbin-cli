@@ -320,11 +320,19 @@ impl<'a> From<&'a ArgMatches<'a>> for DeviceFilter {
     }
 }
 
-pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceFilter {    
+pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceFilter {        
     let device = if let Some(d) = args.value_of("device") {
         Some(String::from(d))
     } else {
-        cfg.default_device()
+        if let Some(default_filter) = cfg.default_filter().as_table() {
+            if let Some(device) = default_filter["device"].as_str() {
+                Some(String::from(device))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     };
 
     DeviceFilter {

@@ -34,10 +34,8 @@ impl Config {
             .as_str().map(PathBuf::from)
     }
 
-    pub fn default_device(&self) -> Option<String> {
-        self.bobbin_cfg["filter"]
-            .as_table().unwrap()["device"]
-            .as_str().map(String::from)
+    pub fn default_filter(&self) -> &Value {
+        &self.bobbin_cfg["filter"]
     }    
 }
 
