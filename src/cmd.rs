@@ -48,6 +48,15 @@ pub fn info(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
         writeln!(out, "{:16} {}", "Vendor", u.vendor_string)?;
         writeln!(out, "{:16} {}", "Product", u.product_string)?;
         writeln!(out, "{:16} {}", "Serial Number", u.serial_number)?;
+        if let Some(serial_path) = d.serial_path() {
+            writeln!(out, "{:16} {}", "Serial Device", serial_path)?;
+        }
+        if let Some(msd_path) = d.msd_path() {
+            writeln!(out, "{:16} {}", "MSD Device", msd_path.display())?;
+        }
+        if let Some(openocd_serial) = d.openocd_serial() {
+            writeln!(out, "{:16} {}", "OpenOCD Serial", openocd_serial)?;
+        }
         writeln!(out, "")?;
     }
     Ok(())
