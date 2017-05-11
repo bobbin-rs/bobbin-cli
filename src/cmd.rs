@@ -74,8 +74,7 @@ pub fn build(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     Ok(())
 }
 
-pub fn load(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
-    let cmd_args = args.subcommand_matches("load").unwrap();
+pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
     let filter = device::DeviceFilter::from(args);
     let mut devices = device::search(&filter)?;
 
@@ -107,6 +106,21 @@ pub fn load(cfg: &Config, args: &ArgMatches, out: &mut Printer) -> Result<()> {
     
     ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
 
+    out.info("loader", "Load Complete")?;
+
+    if args.is_present("run") {
+        let dbg = if let Some(dbg) = device.debugger_type() {
+            out.verbose("debugger",dbg)?;
+            if let Some(dbg) = debugger::debugger(dbg) {
+                dbg
+            } else {
+                bail!("Unknown debugger type: {}", dbg);
+            }
+        } else {
+            bail!("Selected device has no associated loader");
+        };
+        dbg.reset_run(cfg, args, cmd_args, out, device.as_ref())?;        
+    }
     Ok(())
 }
 

@@ -68,8 +68,10 @@ fn run() -> Result<()> {
         cmd::info(&cfg, &args, &mut out)
     } else if let Some(_) = args.subcommand_matches("build") {        
         cmd::build(&cfg, &args, &mut out)
-    } else if let Some(_) = args.subcommand_matches("load") {        
-        cmd::load(&cfg, &args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("load") {        
+        cmd::load(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("run") {        
+        cmd::load(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("halt") {
         cmd::control(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("resume") {
