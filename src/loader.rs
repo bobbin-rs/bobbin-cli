@@ -39,12 +39,17 @@ impl Load for OpenOcdLoader {
         out.verbose("openocd",&format!("{:?}", cmd))?;
 
         out.info("Loading",&format!("{}", target.display()))?;
-        if out.is_verbose() {
-            cmd.spawn()?.wait()?;
+        let status = if out.is_verbose() {
+            cmd.spawn()?.wait()?
         } else {
-            cmd.output()?;
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info("Complete",&format!("Successfully flashed device"))?;
+        } else {
+            out.error("Error",&format!("Error flashing device"))?;
         }
-        out.info("Complete",&format!("Successfully flashed device"))?;       
         Ok(()) 
     }
 }
@@ -56,6 +61,16 @@ impl Load for JLinkLoader {
         let mut dst = PathBuf::from(target);
         dst.set_extension("hex");
         objcopy("ihex", target, &dst)?;
+
+        let jlink_dev = if let Some(ldr_cfg) = cfg.default_loader().as_table() {
+            if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
+                mcu
+            } else {
+                bail!("JLink Loader requires that jlink_device is specified");
+            }
+        } else {
+            bail!("JLink Loader requires that jlink_device is specified");
+        };
 
         // Generate Script File
 
@@ -71,7 +86,7 @@ impl Load for JLinkLoader {
         // Execute Command
 
         let mut cmd = Command::new("JLinkExe");        
-        cmd.arg("-device").arg("S32K144"); // Allow setting these parameters from the command line and config 
+        cmd.arg("-device").arg(jlink_dev);
         cmd.arg("-if").arg("SWD");
         cmd.arg("-autoconnect").arg("1");
         cmd.arg("-speed").arg("4000");
@@ -82,12 +97,17 @@ impl Load for JLinkLoader {
         out.verbose("jlink",&format!("{:?}", cmd))?;
 
         out.info("Loading",&format!("{}", dst.display()))?;
-        if out.is_verbose() {
-            cmd.spawn()?.wait()?;
+        let status = if out.is_verbose() {
+            cmd.spawn()?.wait()?
         } else {
-            cmd.output()?;
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info("Complete",&format!("Successfully flashed device"))?;
+        } else {
+            out.error("Error",&format!("Error flashing device"))?;
         }
-        out.info("Complete",&format!("Successfully flashed device"))?;
         Ok(())
     }
 }
@@ -96,7 +116,29 @@ pub struct BossaLoader {}
 
 impl Load for BossaLoader {
     fn load(&self, cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer, device: &Device, target: &Path) -> Result<()> {
-        unimplemented!()
+        let mut dst = PathBuf::from(target);
+        dst.set_extension("bin");
+        objcopy("binary", target, &dst)?;
+
+        // Execute Command
+
+        out.info("Loading",&format!("{}", dst.display()))?;
+
+        let mut cmd = Command::new("bossac");                
+        cmd.arg("-eivRw").arg(dst);
+
+        let status = if out.is_verbose() {
+            cmd.spawn()?.wait()?
+        } else {
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info("Complete",&format!("Successfully flashed device"))?;
+        } else {
+            out.error("Error",&format!("Error flashing device"))?;
+        }
+        Ok(())
     }
 }
 
@@ -104,7 +146,44 @@ pub struct TeensyLoader {}
 
 impl Load for TeensyLoader {
     fn load(&self, cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer, device: &Device, target: &Path) -> Result<()> {
-        unimplemented!()
+        let mut dst = PathBuf::from(target);
+        dst.set_extension("hex");
+        objcopy("ihex", target, &dst)?;
+
+        // Execute Command
+
+        let mcu = if let Some(ldr_cfg) = cfg.default_loader().as_table() {
+            if let Some(mcu) = ldr_cfg["mcu"].as_str() {
+                mcu
+            } else {
+                bail!("Teensy Loader requires that a MCU is specified");
+            }
+        } else {
+            bail!("Teensy Loader requires that a MCU is specified");
+        };
+
+
+        //let mcu = "mk20dx256";
+
+        out.info("Loading",&format!("{}", dst.display()))?;
+        
+        let mut cmd = Command::new("teensy_loader_cli");                
+        cmd.arg(&format!("--mcu={}", mcu));
+        cmd.arg("-v");
+        cmd.arg(dst);
+
+        let status = if out.is_verbose() {
+            cmd.spawn()?.wait()?
+        } else {
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info("Complete",&format!("Successfully flashed device"))?;
+        } else {
+            out.error("Error",&format!("Error flashing device"))?;
+        }
+        Ok(())
     }
 }
 

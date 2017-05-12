@@ -36,7 +36,11 @@ impl Config {
 
     pub fn default_filter(&self) -> &Value {
         &self.bobbin_cfg["filter"]
-    }    
+    }
+
+    pub fn default_loader(&self) -> &Value {
+        &self.bobbin_cfg["loader"]
+    }     
 }
 
 pub fn read_cargo_config() -> Result<Value> {
