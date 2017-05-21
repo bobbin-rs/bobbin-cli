@@ -62,9 +62,13 @@ impl Load for JLinkLoader {
         dst.set_extension("hex");
         objcopy("ihex", target, &dst)?;
 
-        let jlink_dev = if let Some(ldr_cfg) = cfg.default_loader().as_table() {
-            if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
-                mcu
+        let jlink_dev = if let Some(default_loader) = cfg.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
+                    mcu
+                } else {
+                    bail!("JLink Loader requires that jlink_device is specified");
+                }
             } else {
                 bail!("JLink Loader requires that jlink_device is specified");
             }
@@ -152,14 +156,18 @@ impl Load for TeensyLoader {
 
         // Execute Command
 
-        let mcu = if let Some(ldr_cfg) = cfg.default_loader().as_table() {
-            if let Some(mcu) = ldr_cfg["mcu"].as_str() {
-                mcu
+        let mcu = if let Some(default_loader) = cfg.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(mcu) = ldr_cfg["mcu"].as_str() {
+                    mcu
+                } else {
+                    bail!("Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config");
+                }
             } else {
-                bail!("Teensy Loader requires that a MCU is specified");
+                bail!("Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config");
             }
         } else {
-            bail!("Teensy Loader requires that a MCU is specified");
+            bail!("Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config");
         };
 
 

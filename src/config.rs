@@ -38,8 +38,8 @@ impl Config {
         self.bobbin_cfg.get("filter")
     }
 
-    pub fn default_loader(&self) -> &Value {
-        &self.bobbin_cfg["loader"]
+    pub fn default_loader(&self) -> Option<&Value> {
+        self.bobbin_cfg.get("loader")
     }     
 }
 

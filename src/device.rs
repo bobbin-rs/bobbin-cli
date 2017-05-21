@@ -197,8 +197,18 @@ impl Device for TiIcdiDevice {
         Some("OpenOCD")
     }    
 
+    #[cfg(target_os="macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", &self.usb.serial_number[..7], 1))
+    }    
+
+    #[cfg(target_os="linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.0")
+        } else {
+            None
+        }
     }    
 
     fn openocd_serial(&self) -> Option<String> {
