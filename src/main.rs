@@ -15,12 +15,14 @@ mod app;
 mod cmd;
 mod config;
 mod device;
-mod ioreg;
 mod builder;
 mod loader;
 mod debugger;
 mod printer;
 mod console;
+
+#[cfg(target_os="macos")]
+mod ioreg;
 
 
 use errors::*;
