@@ -1,5 +1,8 @@
 use sha1;
+#[cfg(target_os="macos")]
 use ioreg;
+#[cfg(target_os="linux")]
+use sysfs;
 use clap::ArgMatches;
 use std::path::PathBuf;
 use std::fs;
@@ -367,8 +370,12 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
 }
 
 
-pub fn enumerate() -> Result<Vec<Box<Device>>> {
-    Ok(ioreg::enumerate()?.into_iter().map(lookup).collect())
+pub fn enumerate() -> Result<Vec<Box<Device>>> {    
+    #[cfg(target_os="macos")]
+    return Ok(ioreg::enumerate()?.into_iter().map(lookup).collect());
+    
+    #[cfg(target_os="linux")]
+    return Ok(sysfs::enumerate()?.into_iter().map(lookup).collect());
 }
 
 pub fn search(filter: &DeviceFilter) -> Result<Vec<Box<Device>>> {

@@ -23,6 +23,8 @@ mod console;
 
 #[cfg(target_os="macos")]
 mod ioreg;
+#[cfg(target_os="linux")]
+mod sysfs;
 
 
 use errors::*;
@@ -33,6 +35,7 @@ mod errors {
         }
         foreign_links {
             Io(::std::io::Error);
+            ParseInt(::std::num::ParseIntError);
             PList(::plist::Error);
             Toml(::toml::de::Error);
             Serial(::serial::Error);
