@@ -106,10 +106,14 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     out.verbose("target", &format!("{}", dst.display()))?;
     
     let con = if !cmd_args.is_present("noconsole") {
-        if let Some(cdc_path) = device.cdc_path() {
-            let mut con = console::open(&cdc_path)?;
-            con.clear()?;
-            Some(con)
+        if args.is_present("run") {
+            if let Some(cdc_path) = device.cdc_path() {
+                let mut con = console::open(&cdc_path)?;
+                con.clear()?;
+                Some(con)
+            } else {
+                None
+            }
         } else {
             None
         }

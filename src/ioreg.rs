@@ -46,6 +46,7 @@ impl<'a> From<&'a Plist> for UsbDevice {
             product_string: get_string(other, "USB Product Name"),
             serial_number: get_string(other, "USB Serial Number"),
             location_id: get_number(other, "locationID"),
+            path: None,
         }
     }
 }

@@ -1,6 +1,6 @@
 use ::errors::*;
 
-use std::io::{self, Read};
+use std::io::Read;
 use std::path::Path;
 use std::fs::{self, File};
 use std::vec::Vec;
@@ -14,7 +14,6 @@ pub fn enumerate() -> Result<Vec<UsbDevice>> {
     for entry in fs::read_dir(root)? {
         let entry = entry?;
         let path = entry.path();
-        //println!("path: {:?}", path);
 
         let id_vendor = if let Ok(id_vendor) = read_u16(&path.join("idVendor")) {
             id_vendor
@@ -33,6 +32,7 @@ pub fn enumerate() -> Result<Vec<UsbDevice>> {
             product_string: read_file(&path.join("product")).unwrap_or(String::new()),
             serial_number: read_file(&path.join("serial")).unwrap_or(String::new()),
             location_id: None,
+            path: Some(path),
         });
     }
     
@@ -50,3 +50,14 @@ fn read_file(path: &Path) -> Result<String> {
     f.read_to_end(&mut s)?;
     Ok(String::from(String::from_utf8_lossy(&s).split('\n').next().unwrap_or("")))
 }    
+
+pub fn cdc_path(path: &Path, child: &str) -> Option<String> {
+    let root = Path::new("/sys/bus/usb/drivers/cdc_acm/abc.txt");
+    let name = format!("{}:{}", path.file_name().unwrap().to_str().unwrap(), child);
+    let tty_dir = root.with_file_name(name).join("tty");
+    for entry in fs::read_dir(tty_dir).unwrap() {
+        let entry = entry.unwrap();
+        return Some(format!("/dev/{}", entry.file_name().to_str().unwrap()))
+    }
+    None
+}

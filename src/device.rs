@@ -16,8 +16,9 @@ pub struct UsbDevice {
     pub product_id: u16,
     pub vendor_string: String,
     pub product_string: String,
-    pub serial_number: String,    
+    pub serial_number: String,
     pub location_id: Option<i64>,
+    pub path: Option<PathBuf>,
 }
 
 impl UsbDevice {
@@ -83,6 +84,7 @@ impl Device for JLinkDevice {
         Some("JLink")
     }
 
+    #[cfg(target_os="macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
@@ -90,6 +92,16 @@ impl Device for JLinkDevice {
         ))
     }
 
+    #[cfg(target_os="linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.0")
+        } else {
+            None
+        }
+    }    
+
+    
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("jlink_serial {}", self.usb.serial_number))
     }
@@ -142,11 +154,21 @@ impl Device for StLinkV21Device {
         Some("OpenOCD")
     }    
 
+    #[cfg(target_os="macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             3,
         ))
+    }    
+
+    #[cfg(target_os="linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.2")
+        } else {
+            None
+        }
     }    
 
     fn openocd_serial(&self) -> Option<String> {
@@ -205,6 +227,7 @@ impl Device for CmsisDapDevice {
         Some("OpenOCD")
     }    
 
+    #[cfg(target_os="macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
@@ -212,6 +235,16 @@ impl Device for CmsisDapDevice {
         ))
     }
 
+    #[cfg(target_os="linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.1")
+        } else {
+            None
+        }
+    }    
+
+    
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
     }       
@@ -238,12 +271,22 @@ impl Device for DapLinkDevice {
         Some("OpenOCD")
     }    
 
+    #[cfg(target_os="macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}", 
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             2,
         ))
     }
+
+    #[cfg(target_os="linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.1")
+        } else {
+            None
+        }
+    }    
 
     fn msd_path(&self) -> Option<PathBuf> {
         // Look in /Volumes/DAPLINK*/ for DETAILS.TXT
