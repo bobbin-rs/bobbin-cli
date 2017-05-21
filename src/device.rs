@@ -324,9 +324,17 @@ pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceF
     let device = if let Some(d) = args.value_of("device") {
         Some(String::from(d))
     } else {
-        if let Some(default_filter) = cfg.default_filter().as_table() {
-            if let Some(device) = default_filter["device"].as_str() {
-                Some(String::from(device))
+        if let Some(default_filter) = cfg.default_filter() {
+            if let Some(default_filter) = default_filter.as_table() {
+                if let Some(device) = default_filter.get("device") {
+                    if let Some(device) = device.as_str() {
+                        Some(String::from(device))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
             } else {
                 None
             }

@@ -34,8 +34,8 @@ impl Config {
             .as_str().map(PathBuf::from)
     }
 
-    pub fn default_filter(&self) -> &Value {
-        &self.bobbin_cfg["filter"]
+    pub fn default_filter(&self) -> Option<&Value> {
+        self.bobbin_cfg.get("filter")
     }
 
     pub fn default_loader(&self) -> &Value {
