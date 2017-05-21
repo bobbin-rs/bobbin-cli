@@ -40,7 +40,7 @@ impl OpenOcdDebugger {
         out.verbose("openocd",&format!("{:?}", cmd))?;
 
         if out.is_verbose() {
-            cmd.spawn()?.wait()?;
+            cmd.status()?;
         } else {
             cmd.output()?;
         }
@@ -99,7 +99,7 @@ impl JLinkDebugger {
         out.verbose("jlink",&format!("{:?}", cmd))?;
 
         if out.is_verbose() {
-            cmd.spawn()?.wait()?;
+            cmd.status()?;
         } else {
             cmd.output()?;
         }        

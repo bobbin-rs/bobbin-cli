@@ -40,7 +40,7 @@ impl Load for OpenOcdLoader {
 
         out.info("Loading",&format!("{}", target.display()))?;
         let status = if out.is_verbose() {
-            cmd.spawn()?.wait()?
+            cmd.status()?
         } else {
             cmd.output()?.status
         };
@@ -98,7 +98,7 @@ impl Load for JLinkLoader {
 
         out.info("Loading",&format!("{}", dst.display()))?;
         let status = if out.is_verbose() {
-            cmd.spawn()?.wait()?
+            cmd.status()?
         } else {
             cmd.output()?.status
         };
@@ -128,7 +128,7 @@ impl Load for BossaLoader {
         cmd.arg("-eivRw").arg(dst);
 
         let status = if out.is_verbose() {
-            cmd.spawn()?.wait()?
+            cmd.status()?
         } else {
             cmd.output()?.status
         };
@@ -173,7 +173,7 @@ impl Load for TeensyLoader {
         cmd.arg(dst);
 
         let status = if out.is_verbose() {
-            cmd.spawn()?.wait()?
+            cmd.status()?
         } else {
             cmd.output()?.status
         };
@@ -190,5 +190,5 @@ impl Load for TeensyLoader {
 pub fn objcopy(output: &str, src: &Path, dst: &Path) -> Result<ExitStatus> {
     let mut cmd = Command::new("arm-none-eabi-objcopy");
     cmd.arg("-O").arg(output).arg(src).arg(dst);    
-    Ok(cmd.spawn()?.wait()?)
+    Ok(cmd.status()?)
 }

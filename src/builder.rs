@@ -57,14 +57,15 @@ pub fn build(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut P
     }    
     out.verbose("xargo",&format!("{:?}", cmd))?;
     if !cmd.status()?.success() {
-        bail!("Build failed");
+        bail!("xargo build failed");
     }
     if dst.is_file() {
         let mut cmd = Command::new("arm-none-eabi-size");
         out.verbose("size",&format!("{:?}", cmd))?;
         cmd.arg(&dst);
-        cmd.spawn()?.wait()?;
-
+        if !cmd.status()?.success() {
+            bail!("arm-none-eabi-size failed");
+        }
         Ok(Some(dst))
     } else {
         Ok(None)
