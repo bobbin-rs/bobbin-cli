@@ -7,6 +7,7 @@ use clap::ArgMatches;
 use std::path::PathBuf;
 use std::fs;
 use std::io::Read;
+use std::fmt::Write;
 use config::Config;
 use Result;
 
@@ -129,7 +130,24 @@ impl Device for StLinkV2Device {
     }    
 
     fn openocd_serial(&self) -> Option<String> {
-        Some(format!("hla_serial {}", self.usb.serial_number))
+        // see https://armprojects.wordpress.com/2016/08/21/debugging-multiple-stm32-in-eclipse-with-st-link-v2-and-openocd/
+        // This assumes serial number is an 8-bit ASCII string that has been directly encoded as UTF-8
+        // Additionally, assume that OpenOCD will replace non-ASCII characters with a question mark.
+
+        let serial = self.usb.serial_number.clone().into_bytes();
+        let mut out = String::from("hla_serial \"");
+
+        for c in self.usb.serial_number.chars() {
+            let c = c as u8;
+            let b = if c > 0x7f {
+                0x3f
+            } else {
+                c
+            };
+            write!(out, "\\x{:02X}", b).unwrap();
+        }
+        write!(out,"\"").unwrap();
+        Some(out)
     }    
 }
 
