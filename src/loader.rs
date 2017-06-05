@@ -30,6 +30,10 @@ impl Load for OpenOcdLoader {
         let mut cmd = Command::new("openocd");
         cmd.arg("--file").arg("openocd.cfg");
         cmd.arg("--command").arg(&device.openocd_serial().unwrap());
+        cmd.arg("--command").arg("gdb_port disabled");
+        cmd.arg("--command").arg("tcl_port disabled");
+        cmd.arg("--command").arg("telnet_port disabled");
+
         if args.is_present("run") {
             cmd.arg("--command").arg(&format!("program {} reset exit", target.display()));            
         } else {            
