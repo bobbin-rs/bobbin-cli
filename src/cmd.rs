@@ -173,3 +173,114 @@ pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
 
     Ok(())
 }
+
+pub fn openocd(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };    
+
+    let mut cmd = Command::new("openocd");
+    cmd.arg("--file").arg("openocd.cfg");
+    cmd.arg("--command").arg(&device.openocd_serial().unwrap());
+
+    cmd.exec();
+
+    let status = cmd.status()?;
+    if !status.success() {
+        bail!("openocd failed")
+    }
+    Ok(())
+}
+
+pub fn gdb(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+
+    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+        dst
+    } else {
+        bail!("No build output available for gdb");
+    };
+
+    let mut cmd = Command::new("arm-none-eabi-gdb");
+    cmd
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .arg(dst);
+    out.verbose("gdb",&format!("{:?}", cmd))?;
+
+    cmd.exec();
+
+    let status = cmd.status()?;
+    if !status.success() {
+        bail!("gdb failed")
+    }
+    Ok(())
+}
+
+pub fn console(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };    
+
+    if let Some(cdc_path) = device.cdc_path() {
+        let mut con = console::open(&cdc_path)?;
+        con.view()?
+    } else {
+        bail!("No console found for device");
+    }
+    
+    Ok(())    
+}
+
+pub fn screen(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };    
+
+    let mut cmd = Command::new("screen");
+    if let Some(cdc_path) = device.cdc_path() {
+        cmd.arg(cdc_path);
+    } else {
+        bail!("No serial device path found");
+    }
+    cmd.arg("115200");
+    cmd.exec();
+
+    let status = cmd.status()?;
+    if !status.success() {
+        bail!("screen failed")
+    }
+    Ok(())
+}
+
+pub fn objdump(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    Ok(())
+}

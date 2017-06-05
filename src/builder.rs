@@ -6,6 +6,10 @@ use printer::Printer;
 use Result;
 
 pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Result<PathBuf> {
+    if let Some(dst) = cmd_args.value_of("binary") {
+        return Ok(PathBuf::from(dst))
+    }
+
     let mut dst = PathBuf::from("target");
 
     if let Some(t) = cmd_args.value_of("target") {
@@ -36,6 +40,29 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
 }
 
 pub fn build(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<Option<PathBuf>> {
+    if cmd_args.is_present("no-build") {
+        Ok(Some(build_path(cfg, args, cmd_args)?))
+    } else if cmd_args.is_present("make") {
+        build_make(cfg, args, cmd_args, out)
+    } else {
+        build_xargo(cfg, args, cmd_args, out)
+    }
+}
+pub fn build_make(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<Option<PathBuf>> {
+    let dst = build_path(cfg, args, cmd_args)?;
+    let mut cmd = Command::new("make");
+    out.verbose("make",&format!("{:?}", cmd))?;
+    for arg in cmd_args.values_of_os("make").unwrap().into_iter() {
+        cmd.arg(arg);
+    }
+
+    if !cmd.status()?.success() {
+        bail!("make failed");
+    }
+
+    Ok(Some(dst))
+}
+pub fn build_xargo(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<Option<PathBuf>> {
     let dst = build_path(cfg, args, cmd_args)?;
     let mut cmd = Command::new("xargo");
     cmd.arg("build");
