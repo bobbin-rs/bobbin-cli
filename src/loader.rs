@@ -48,7 +48,7 @@ impl Load for OpenOcdLoader {
         if status.success() {
             out.info("Complete",&format!("Successfully flashed device"))?;
         } else {
-            out.error("Error",&format!("Error flashing device"))?;
+            bail!("Error flashing device");
         }
         Ok(()) 
     }
@@ -110,7 +110,7 @@ impl Load for JLinkLoader {
         if status.success() {
             out.info("Complete",&format!("Successfully flashed device"))?;
         } else {
-            out.error("Error",&format!("Error flashing device"))?;
+            bail!("Error flashing device");
         }
         Ok(())
     }
@@ -140,7 +140,7 @@ impl Load for BossaLoader {
         if status.success() {
             out.info("Complete",&format!("Successfully flashed device"))?;
         } else {
-            out.error("Error",&format!("Error flashing device"))?;
+            bail!("Error flashing device");
         }
         Ok(())
     }
@@ -189,7 +189,7 @@ impl Load for TeensyLoader {
         if status.success() {
             out.info("Complete",&format!("Successfully flashed device"))?;
         } else {
-            out.error("Error",&format!("Error flashing device"))?;
+            bail!("Error flashing device");
         }
         Ok(())
     }
