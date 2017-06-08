@@ -105,7 +105,7 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     };
     out.verbose("target", &format!("{}", dst.display()))?;
     
-    let con = if !cmd_args.is_present("noconsole") {
+    let con = if !cmd_args.is_present("noconsole") && !cmd_args.is_present("itm") {
         if args.is_present("run") {
             if let Some(cdc_path) = device.cdc_path() {
                 let mut con = console::open(&cdc_path)?;
@@ -123,9 +123,17 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
 
     ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
 
-    out.info("loader", "Load Complete")?;
+    out.info("Loader", "Load Complete")?;
 
-    if let Some(mut con) = con {
+    if cmd_args.is_present("itm") {
+        if device.can_trace_itm() {
+            out.info("ITM", "Starting ITM Trace")?;
+            device.trace_itm()?;
+        } else {
+            bail!("Currently selected device does not support ITM trace");
+        }
+    } else if let Some(mut con) = con {
+        out.info("Console", "Opening Console")?;
         con.view()?;
     }
 
@@ -282,5 +290,26 @@ pub fn screen(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut 
 }
 
 pub fn objdump(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    Ok(())
+}
+
+pub fn itm(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };    
+
+    if device.can_trace_itm() {
+        out.info("ITM", "Starting ITM Trace")?;
+        device.trace_itm()?;
+    } else {
+        bail!("Currently selected device does not support ITM trace");
+    }
     Ok(())
 }

@@ -11,6 +11,9 @@ extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
 
+extern crate byteorder;
+extern crate libusb;
+
 mod app;
 mod cmd;
 mod config;
@@ -20,6 +23,7 @@ mod loader;
 mod debugger;
 mod printer;
 mod console;
+mod stlink;
 
 #[cfg(target_os="macos")]
 mod ioreg;
@@ -39,6 +43,7 @@ mod errors {
             PList(::plist::Error);
             Toml(::toml::de::Error);
             Serial(::serial::Error);
+            LibUsb(::libusb::Error);
         }
     }
 }
@@ -94,28 +99,10 @@ fn run() -> Result<()> {
         cmd::console(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("screen") {
         cmd::screen(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("itm") {
+        cmd::itm(&cfg, &args, cmd_args, &mut out)
     } else {
         println!("{}", args.usage());
         Ok(())
-    }
-    
-    // if let Some(cmd_args) = args.subcommand_matches("list") {        
-    //     try!(cmd_list(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("load") {
-    //     try!(cmd_device(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("run") {
-    //     try!(cmd_device(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("halt") {
-    //     try!(cmd_device(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("resume") {
-    //     try!(cmd_device(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("reset") {
-    //     try!(cmd_device(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("console") {
-    //     try!(cmd_console(&args, cmd_args));
-    // } else if let Some(cmd_args) = args.subcommand_matches("debug") {
-    //     try!(cmd_debug(&args, cmd_args));
-    // } else {
-    //     println!("{}", args.usage());
-    // }    
+    }    
 }
