@@ -56,6 +56,10 @@ pub fn info(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         if let Some(debugger_type) = d.debugger_type() {
             writeln!(out, "{:16} {}", "Debugger Type", debugger_type)?;
         }        
+
+        if let Some(bossa_path) = d.bossa_path() {
+            writeln!(out, "{:16} {}", "Bossac Device", bossa_path)?;
+        }        
         if let Some(cdc_path) = d.cdc_path() {
             writeln!(out, "{:16} {}", "CDC Device", cdc_path)?;
         }

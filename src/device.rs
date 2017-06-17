@@ -44,6 +44,7 @@ pub trait Device {
     fn debugger_type(&self) -> Option<&str> { None }
     fn cdc_path(&self) -> Option<String> { None }
     fn msd_path(&self) -> Option<PathBuf> { None }
+    fn bossa_path(&self) -> Option<String> { None }
     
     fn jlink_supported(&self) -> bool {
         self.device_type() == Some("JLink")
@@ -422,6 +423,14 @@ impl Device for FeatherDevice {
     fn loader_type(&self) -> Option<&str> {
         Some("Bossa")
     }
+
+    #[cfg(target_os="macos")]
+    fn bossa_path(&self) -> Option<String> {
+        Some(format!("/dev/cu.usbmodem{}{}", 
+            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            1,
+        ))
+    }    
 }
 
 pub struct TeensyDevice {

@@ -133,7 +133,7 @@ impl Load for BossaLoader {
         out.info("Loading",&format!("{}", dst.display()))?;
 
         let mut cmd = Command::new("bossac");                
-        cmd.arg("-eivRw").arg(dst);
+        cmd.arg("-eivRw").arg("-p").arg(device.bossa_path().unwrap()).arg(dst);
 
         let status = if out.is_verbose() {
             cmd.status()?
