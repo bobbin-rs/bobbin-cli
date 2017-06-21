@@ -132,7 +132,18 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     if cmd_args.is_present("itm") {
         if device.can_trace_itm() {
             out.info("ITM", "Starting ITM Trace")?;
-            device.trace_itm()?;
+            let target_clk = if let Some(v) = cmd_args.value_of("itm-target-clock") {
+                v.parse::<u32>()?
+            } else {
+                if let Some(v) = cfg.itm_target_clock() {
+                    v
+                } else {
+                    bail!("itm-target-clock is required for ITM trace.")
+                }
+            };
+            let trace_clk = 2_000_000;
+            device.trace_itm(target_clk, trace_clk)?;
+
         } else {
             bail!("Currently selected device does not support ITM trace");
         }
@@ -311,7 +322,17 @@ pub fn itm(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pri
 
     if device.can_trace_itm() {
         out.info("ITM", "Starting ITM Trace")?;
-        device.trace_itm()?;
+        let target_clk = if let Some(v) = cmd_args.value_of("itm-target-clock") {
+            v.parse::<u32>()?
+        } else {
+            if let Some(v) = cfg.itm_target_clock() {
+                v
+            } else {
+                bail!("itm-target-clock is required for ITM trace.")
+            }
+        };
+        let trace_clk = 2_000_000;
+        device.trace_itm(target_clk, trace_clk)?;
     } else {
         bail!("Currently selected device does not support ITM trace");
     }

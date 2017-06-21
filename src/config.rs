@@ -40,7 +40,32 @@ impl Config {
 
     pub fn default_loader(&self) -> Option<&Value> {
         self.bobbin_cfg.get("loader")
-    }     
+    }
+
+    pub fn default_itm(&self) -> Option<&Value> {
+        self.bobbin_cfg.get("itm")
+    }
+
+    pub fn itm_target_clock(&self) -> Option<u32> {
+        if let Some(default_itm) = self.default_itm() {
+            if let Some(default_itm) = default_itm.as_table() {
+                if let Some(target_clock) = default_itm.get("target-clock") {
+                    if let Some(target_clock) = target_clock.as_integer() {
+                        Some(target_clock as u32)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }        
+    }
+
 }
 
 pub fn read_cargo_config() -> Result<Value> {

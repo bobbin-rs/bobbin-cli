@@ -56,7 +56,7 @@ pub trait Device {
     fn openocd_serial(&self) -> Option<String> { None }
 
     fn can_trace_itm(&self) -> bool { false }
-    fn trace_itm(&self) -> Result<()> { unimplemented!() }
+    fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> { unimplemented!() }
 }
 
 pub struct UnknownDevice {
@@ -158,7 +158,7 @@ impl Device for StLinkV2Device {
     fn can_trace_itm(&self) -> bool { true }
 
     #[allow(unreachable_code)]
-    fn trace_itm(&self) -> Result<()> {
+    fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
       
         let mut ctx = stlink::context()?;
         let cfg = stlink::Config::new(
@@ -167,8 +167,8 @@ impl Device for StLinkV2Device {
             0x2,
             0x81, 
             0x83,
-            168_000_000,
-            2_000_000,
+            target_clk,
+            trace_clk,
             &self.usb.serial_number
         );
         if let Some(mut d) = ctx.connect(cfg)? {
@@ -229,8 +229,7 @@ impl Device for StLinkV21Device {
     fn can_trace_itm(&self) -> bool { true }
 
     #[allow(unreachable_code)]
-    fn trace_itm(&self) -> Result<()> {
-      
+    fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
         let mut ctx = stlink::context()?;
         let cfg = stlink::Config::new(
             self.usb.vendor_id, 
@@ -238,8 +237,8 @@ impl Device for StLinkV21Device {
             0x1,
             0x81, 
             0x82,
-            168_000_000,
-            2_000_000,
+            target_clk,
+            trace_clk,
             &self.usb.serial_number);
         if let Some(mut d) = ctx.connect(cfg)? {
             d.configure(false)?;
