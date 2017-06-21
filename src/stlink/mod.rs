@@ -552,26 +552,24 @@ impl<'a> Reader<'a> {
 
     pub fn next(&mut self) -> Option<(u8, &'a [u8])> {
         if self.pos >= self.buf.len() { return None }        
+        let len = self.buf.len();
         let pos = self.pos;
         let header = self.buf[pos];
         let port = header >> 3;
-        self.pos += 1;
-        if self.pos >= self.buf.len() { return None }        
-        //println!("{}", header & 0b111);
         match header & 0b111 {
-            0b01 => {                
-                self.pos += 1;
-                if self.pos >= self.buf.len() { return None }        
+            0b01 => {
+                self.pos += 2;
+                if pos + 2 > len { return None };
                 Some((port, &self.buf[pos+1..pos+2]))
             },
             0b10 => {
-                self.pos += 2;
-                if self.pos >= self.buf.len() { return None }        
+                self.pos += 3;
+                if pos + 3 > len { return None };
                 Some((port, &self.buf[pos+1..pos+3]))
             },
             0b11 => {
-                self.pos += 4;
-                if self.pos >= self.buf.len() { return None }
+                self.pos += 5;
+                if pos + 5 > len { return None };
                 Some((port, &self.buf[pos+1..pos+5]))
             },
             _ => None,

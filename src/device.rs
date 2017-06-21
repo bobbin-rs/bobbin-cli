@@ -239,7 +239,7 @@ impl Device for StLinkV21Device {
             let stdout = io::stdout();
             let mut stdout = stdout.lock();
             loop {            
-                let n = d.trace_read(&mut trace_buf)?;            
+                let n = d.trace_read(&mut trace_buf)?;
                 if n > 0 {
                     let mut r = stlink::Reader::new(&trace_buf[..n]);
                     while let Some((port, data)) = r.next() {                    
@@ -247,6 +247,7 @@ impl Device for StLinkV21Device {
                             stdout.write_all(data)?
                         }
                     }
+                    stdout.flush()?;
                 }
                 thread::sleep(Duration::from_millis(10));
             }
