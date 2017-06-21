@@ -154,6 +154,34 @@ impl Device for StLinkV2Device {
         write!(out,"\"").unwrap();
         Some(out)
     }    
+
+    fn can_trace_itm(&self) -> bool { true }
+
+    #[allow(unreachable_code)]
+    fn trace_itm(&self) -> Result<()> {
+      
+        let mut ctx = stlink::context()?;
+        let cfg = stlink::Config::new(
+            self.usb.vendor_id, 
+            self.usb.product_id, 
+            0x2,
+            0x81, 
+            0x83,
+            168_000_000,
+            2_000_000,
+            &self.usb.serial_number
+        );
+        if let Some(mut d) = ctx.connect(cfg)? {
+            println!("configure");
+            d.configure(false)?;
+            println!("run trace");
+            d.run_trace()?;
+
+        } else {
+            bail!("No device found");
+        }        
+        unreachable!()
+    }    
 }
 
 pub struct StLinkV21Device {
@@ -202,55 +230,20 @@ impl Device for StLinkV21Device {
 
     #[allow(unreachable_code)]
     fn trace_itm(&self) -> Result<()> {
-        use std::time::Duration;
-        use std::thread;
-        use std::io::{self, Write};
-        
+      
         let mut ctx = stlink::context()?;
-        let cfg = stlink::Config::new(&self.usb.serial_number);
+        let cfg = stlink::Config::new(
+            self.usb.vendor_id, 
+            self.usb.product_id,
+            0x1,
+            0x81, 
+            0x82,
+            168_000_000,
+            2_000_000,
+            &self.usb.serial_number);
         if let Some(mut d) = ctx.connect(cfg)? {
             d.configure(false)?;
-            let mode = match d.mode() {
-                Ok(mode) => mode,
-                Err(_) => {
-                    d.reinit()?;
-                    d.configure(true)?;
-                    d.mode()?
-                }
-            };        
-            if mode == stlink::Mode::Dfu {
-                d.exit_dfu_mode()?;
-            }
-            if mode != stlink::Mode::Debug {
-                d.enter_swd_mode()?;
-            }
-
-            if mode != stlink::Mode::Debug {
-                bail!("Could not enter Debug mode");
-            }  
-
-            d.halt()?;
-
-            d.trace_setup(0xffffffff, 0, 168_000_000, 2_000_000)?;
-            d.trace_start_rx(2_000_000)?;
-            d.run()?;
-
-            let mut trace_buf = [0u8; 4096];
-            let stdout = io::stdout();
-            let mut stdout = stdout.lock();
-            loop {            
-                let n = d.trace_read(&mut trace_buf)?;
-                if n > 0 {
-                    let mut r = stlink::Reader::new(&trace_buf[..n]);
-                    while let Some((port, data)) = r.next() {                    
-                        if port == 0 {
-                            stdout.write_all(data)?
-                        }
-                    }
-                    stdout.flush()?;
-                }
-                thread::sleep(Duration::from_millis(10));
-            }
+            d.run_trace()?;
 
         } else {
             bail!("No device found");

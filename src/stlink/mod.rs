@@ -24,12 +24,35 @@ pub use errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    vendor_id: u16,
+    product_id: u16,
+    send_ep: u8,
+    recv_ep: u8,
+    trace_ep: u8,
+    target_clk: u32,
+    trace_clk: u32,
     serial_number: String,
 }
 
 impl Config {
-    pub fn new(serial_number: &str) -> Self {
-        Config { serial_number: String::from(serial_number) }
+    pub fn new(vendor_id: u16, 
+            product_id: u16, 
+            send_ep: u8, 
+            recv_ep: u8, 
+            trace_ep: u8, 
+            target_clk: u32,
+            trace_clk: u32,
+        serial_number: &str) -> Self {
+        Config { 
+            vendor_id: vendor_id,
+            product_id: product_id,
+            send_ep: send_ep,
+            recv_ep: recv_ep,
+            trace_ep: trace_ep,
+            target_clk: target_clk,
+            trace_clk: trace_clk,
+            serial_number: String::from(serial_number) 
+        }
     }
 }
 
@@ -44,6 +67,11 @@ impl Context {
         //self.inner.set_log_level(libusb::LogLevel::Debug);
         for device in self.inner.devices()?.iter() {
             let device_desc = device.device_descriptor()?;
+
+            if device_desc.vendor_id() != cfg.vendor_id || device_desc.product_id() != cfg.product_id {
+                continue
+            }
+            
             let device_handle = device.open()?;
             let lang = device_handle.read_languages(timeout)?[0];
 
@@ -124,15 +152,15 @@ impl<'a> Debugger<'a> {
     }
 
     pub fn send(&self, src: &[u8]) -> Result<usize> {
-        Ok(self.handle.write_bulk(0x01, src, self.timeout)?)
+        Ok(self.handle.write_bulk(self.config.send_ep, src, self.timeout)?)
     }
 
     pub fn recv(&self, dst: &mut [u8]) -> Result<usize> {
-        Ok(self.handle.read_bulk(0x81, dst, self.timeout)?)
+        Ok(self.handle.read_bulk(self.config.recv_ep, dst, self.timeout)?)
     }
 
     pub fn trace_recv(&self, dst: &mut [u8]) -> Result<usize> {
-        Ok(self.handle.read_bulk(0x82, dst, self.timeout)?)
+        Ok(self.handle.read_bulk(self.config.trace_ep, dst, self.timeout)?)
     }    
 
     pub fn send_u32(&self, src: &[u32]) -> Result<usize> {
@@ -397,6 +425,56 @@ impl<'a> Debugger<'a> {
         reg |= (syncbits << 10) | 1; // Must have cyccnt to have cyccnt tap!
         self.write_32(DWT_CTRL, reg)?;
         Ok(())
+    }
+
+    pub fn run_trace(&mut self) -> Result<()> {
+        use std::time::Duration;
+        use std::thread;
+        use std::io::{self, Write};
+
+        let mode = match self.mode() {
+            Ok(mode) => mode,
+            Err(_) => {
+                self.reinit()?;
+                self.configure(true)?;
+                self.mode()?
+            }
+        };        
+        if mode == Mode::Dfu {
+            self.exit_dfu_mode()?;
+        }
+        if mode != Mode::Debug {
+            self.enter_swd_mode()?;
+        }
+
+        if mode != Mode::Debug {
+            bail!("Could not enter Debug mode");
+        }  
+
+        self.halt()?;
+
+        let (target_clk, trace_clk) = (self.config.target_clk, self.config.trace_clk);
+
+        self.trace_setup(0xffffffff, 0, target_clk, trace_clk)?;
+        self.trace_start_rx(trace_clk)?;
+        self.run()?;
+
+        let mut trace_buf = [0u8; 4096];
+        let stdout = io::stdout();
+        let mut stdout = stdout.lock();
+        loop {            
+            let n = self.trace_read(&mut trace_buf)?;
+            if n > 0 {
+                let mut r = Reader::new(&trace_buf[..n]);
+                while let Some((port, data)) = r.next() {                    
+                    if port == 0 {
+                        stdout.write_all(data)?
+                    }
+                }
+                stdout.flush()?;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }        
     }
 }
 
