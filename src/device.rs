@@ -483,7 +483,7 @@ pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceF
     };
 
     DeviceFilter {
-        all: args.is_present("all"),
+        all: args.is_present("all") || cmd_args.is_present("all"),
         device: device,
     }    
 }
