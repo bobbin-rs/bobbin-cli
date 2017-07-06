@@ -13,6 +13,8 @@ extern crate tempfile;
 
 extern crate byteorder;
 extern crate libusb;
+extern crate sctl;
+extern crate cobs;
 
 mod app;
 mod cmd;

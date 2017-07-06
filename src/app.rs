@@ -161,6 +161,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("itm").long("itm").help("Display the ITM trace output after running."))
             .arg(Arg::with_name("itm-target-clock").long("itm-target-clock").min_values(0).max_values(1)
                 .help("Set the ITM Target's Clock Speed"))
+            .arg(Arg::with_name("sctl").long("sctl").help("Use the SCTL protocol to communicate with the device."))
             .about("Load and run an application on the selected device after a successful build.")
         )
         .subcommand(SubCommand::with_name("halt").about("Halt the selected device."))

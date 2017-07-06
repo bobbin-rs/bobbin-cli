@@ -149,7 +149,11 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         }
     } else if let Some(mut con) = con {
         out.info("Console", "Opening Console")?;
-        con.view()?;
+        if cmd_args.is_present("sctl") {
+            con.view_sctl()?;
+        } else {
+            con.view()?;
+        }
     }
 
     Ok(())
