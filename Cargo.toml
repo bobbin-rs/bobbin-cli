@@ -14,5 +14,5 @@ termcolor = "0.3.2"
 tempfile = "2.1.5"
 byteorder = "1.0"
 libusb = "0.3"
-sctl = { path = "../bobbin-tlv/sctl/" }
+packet = { path = "../bobbin-tlv/packet/" }
 cobs = { path = "../bobbin-tlv/cobs/" }
