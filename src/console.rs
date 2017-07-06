@@ -54,34 +54,35 @@ impl Console {
         self.port.set_timeout(Duration::from_millis(1000))?;
         
         let mut buf = [0u8; 64];
-        let mut c = cobs::Reader::new(&mut buf);        
+        let mut b = cobs::Buffer::new(&mut buf);
         loop {
-            match self.port.read(c.as_mut()) {
+            match self.port.read(b.as_mut()) {
                 Ok(n) => {
-                    println!("{} {:?}", n, &c.as_mut()[..n]);
-                    c.extend(n);
-                    loop {
-                        let mut dst = [0u8; 256];
-                        match c.decode_packet(&mut dst) {
-                            Ok(Some(n)) => {
-                                self.handle_packet(&dst[..n])?;
-                            },
-                            Ok(None) => {
-                                break;
-                            },
-                            Err(cobs::Error::SourceTooShort) => {                                
-                                println!("source too short {:?}", c);                                
+                    //println!("{} {:?}", n, &b.as_mut()[..n]);
+                    b.extend(n);
+                    while let Some(packet) = b.next_packet() {
+                        println!("packet: {:?}", packet);
+                        if packet.len() == 0 {
+                            println!("skipping empty packet");
+                            continue;
+                        }
+                        let mut msg_buf = [0u8; 64];
+                        match cobs::decode(packet, &mut msg_buf) {
+                            Ok(n) => {
+                                self.handle_packet(&msg_buf[..n])?;
                             },
                             Err(e) => {
-                                break;
+                                println!("Error: {:?}", e)
                             }
                         }
+
+                        
                     }
 
                 },
                 Err(_) => {},
             }
-            c.compact();
+            b.compact();
         }        
     }
 
