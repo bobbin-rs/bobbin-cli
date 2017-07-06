@@ -2,6 +2,7 @@ use serial::{self, SerialPort};
 use std::process;
 use std::time::Duration;
 use std::io::{Read, Write};
+use std::str;
 //use sctl::{self, Message};
 use cobs;
 use packet::{self, Message};
@@ -52,14 +53,15 @@ impl Console {
     pub fn view_sctl(&mut self) -> Result<()> {
         self.port.set_timeout(Duration::from_millis(1000))?;
         
-        let mut buf = [0u8; 1024];
+        let mut buf = [0u8; 64];
         let mut c = cobs::Reader::new(&mut buf);        
         loop {
             match self.port.read(c.as_mut()) {
                 Ok(n) => {
+                    println!("{} {:?}", n, &c.as_mut()[..n]);
                     c.extend(n);
                     loop {
-                        let mut dst = [0u8; 1024];
+                        let mut dst = [0u8; 256];
                         match c.decode_packet(&mut dst) {
                             Ok(Some(n)) => {
                                 self.handle_packet(&dst[..n])?;
@@ -67,8 +69,11 @@ impl Console {
                             Ok(None) => {
                                 break;
                             },
+                            Err(cobs::Error::SourceTooShort) => {                                
+                                println!("source too short {:?}", c);                                
+                            },
                             Err(e) => {
-                                println!("Error: {:?}", e);
+                                break;
                             }
                         }
                     }
@@ -81,52 +86,37 @@ impl Console {
     }
 
     fn handle_packet(&mut self, packet: &[u8]) -> Result<()> {
-        //println!("Packet: {:?}", packet);
         if packet.len() == 0 { return Ok(())}
-
         let msg = packet::decode_message(&packet).unwrap();
         self.handle_message(msg)
-
-        // let mut r = sctl::Reader::new(packet);
-        // loop {
-        //     let mut tmp = [0u8; 1024];
-        //     match r.read(&mut tmp) {
-        //         Ok(Some(ref msg)) => {
-        //             self.handle_message(msg)?;                    
-        //         },
-        //         Ok(None) => {
-        //             break;
-        //         }
-        //         Err(e) => {
-        //             println!("Error: {:?}", e);
-        //             break;
-        //         }
-        //     }
-        // }
-        // Ok(())    
     }
 
     fn handle_message(&mut self, msg: Message) -> Result<()> {
         let mut out = ::std::io::stdout();
+        let mut err = ::std::io::stderr();
         match msg {
             Message::Boot(value) => {
-                try!(out.write(b"boot: "));
-                try!(out.write(value));
-                try!(out.write(b"\r\n"));
+                write!(out, "Boot: {}\r\n", String::from_utf8_lossy(value))?;
             },
             Message::Stdout(ref value) => {
-                try!(out.write(value));
+                out.write(value)?;
             },
             Message::Stderr(ref value) => {
-                try!(out.write(value));
+                err.write(value)?;
             },
             Message::Exit(ref value) => {
-                println!("Exit: {}", value[0]);
+                write!(err, "Exit: {}\r\n", value[0])?;
                 process::exit(value[0] as i32);
                 
             },
+            Message::Exception(ref value) => {
+                write!(err, "Exception: {}\r\n", String::from_utf8_lossy(value))?;            
+            },
+            Message::Panic(ref value) => {
+                write!(err, "Panic: {}\r\n", String::from_utf8_lossy(value))?;
+            },            
             _ => {
-                println!("Message: {:?}", msg);
+                write!(err, "{:?}", msg)?;
             }
         }
         Ok(())
