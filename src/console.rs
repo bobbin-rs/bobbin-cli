@@ -15,14 +15,24 @@ pub fn open(path: &str) -> Result<Console> {
             settings.set_baud_rate(serial::Baud115200).unwrap();
             Ok(())
     }));
-    Ok(Console{ port: port })
+    Ok(Console{ port: port, test_filter: None })
 }
 
 pub struct Console {
     port: serial::SystemPort,
+    test_filter: Option<String>
 }
 
 impl Console {
+    pub fn test_filter(&self) -> &Option<String> {
+        &self.test_filter
+    }
+
+    pub fn set_test_filter(&mut self, value: Option<String>) -> &Self {
+        self.test_filter = value;
+        self
+    }
+
     pub fn clear(&mut self) -> Result<()> {
         let mut buf = [0u8; 1024];
         self.port.set_timeout(Duration::from_millis(10))?;
@@ -98,6 +108,20 @@ impl Console {
         match msg {
             Message::Boot(value) => {
                 write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
+                if let Some(ref filter) = self.test_filter {
+                    println!("Start tests: {:?}", filter);
+
+                    let msg = packet::Message::Run(b"test");
+                    let mut tmp = [0u8; 256];
+                    let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+                    let mut buf = [0u8; 256];
+                    let mut w = cobs::Writer::new(&mut buf);
+                    w.encode_packet(pkt).unwrap();
+                    println!("Sending {:?}", w.as_ref());
+                    let n = self.port.write(w.as_ref()).unwrap();
+                    println!("Sent {} bytes", n);
+
+                }
             },
             Message::Stdout(ref value) => {
                 out.write(value)?;
@@ -122,5 +146,4 @@ impl Console {
         }
         Ok(())
     }
-
 }

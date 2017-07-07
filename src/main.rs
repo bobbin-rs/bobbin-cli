@@ -87,6 +87,8 @@ fn run() -> Result<()> {
         cmd::load(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("run") {        
         cmd::load(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("test") {        
+        cmd::load(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("halt") {
         cmd::control(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("resume") {

@@ -34,7 +34,7 @@ impl Load for OpenOcdLoader {
         cmd.arg("--command").arg("tcl_port disabled");
         cmd.arg("--command").arg("telnet_port disabled");
 
-        if args.is_present("run") {
+        if args.is_present("run") || args.is_present("test") {
             cmd.arg("--command").arg(&format!("program {} reset exit", target.display()));            
         } else {            
             cmd.arg("--command").arg(&format!("program {} exit", target.display()));
@@ -86,7 +86,7 @@ impl Load for JLinkLoader {
         try!(writeln!(tmpfile, "r"));
         try!(writeln!(tmpfile, "h"));
         try!(writeln!(tmpfile, "loadfile {}", dst.display()));
-        if args.is_present("run") {
+        if args.is_present("run") || args.is_present("test") {
             try!(writeln!(tmpfile, "g"));
         }
         try!(writeln!(tmpfile, "exit"));

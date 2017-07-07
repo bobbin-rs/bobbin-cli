@@ -108,9 +108,9 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         bail!("No build output available to load");
     };
     out.verbose("target", &format!("{}", dst.display()))?;
-    
+
     let con = if !cmd_args.is_present("noconsole") && !cmd_args.is_present("itm") {
-        if args.is_present("run") {
+        if args.is_present("run") || args.is_present("test") {
             if let Some(cdc_path) = device.cdc_path() {
                 let mut con = console::open(&cdc_path)?;
                 con.clear()?;
@@ -149,7 +149,16 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         }
     } else if let Some(mut con) = con {
         out.info("Console", "Opening Console")?;
-        if cmd_args.is_present("packet") {
+        if cmd_args.is_present("packet") || args.is_present("test") {
+            println!("Opening packet view");
+            if args.is_present("test") {                
+                con.set_test_filter(cmd_args.value_of("test").map(String::from));
+                if con.test_filter().is_none() {
+                    con.set_test_filter(Some(String::new()));
+                }
+            }
+            
+            println!("test filter: {:?}", con.test_filter());
             con.view_packet()?;
         } else {
             con.view()?;
