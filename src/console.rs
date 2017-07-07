@@ -50,29 +50,29 @@ impl Console {
         //Ok(())
     }
 
-    pub fn view_sctl(&mut self) -> Result<()> {
+    pub fn view_packet(&mut self) -> Result<()> {
         self.port.set_timeout(Duration::from_millis(1000))?;
         
-        let mut buf = [0u8; 64];
+        let mut buf = [0u8; 1024];
         let mut b = cobs::Buffer::new(&mut buf);
         loop {
             match self.port.read(b.as_mut()) {
                 Ok(n) => {
-                    //println!("{} {:?}", n, &b.as_mut()[..n]);
                     b.extend(n);
                     while let Some(packet) = b.next_packet() {
-                        println!("packet: {:?}", packet);
                         if packet.len() == 0 {
-                            println!("skipping empty packet");
                             continue;
                         }
-                        let mut msg_buf = [0u8; 64];
+                        let mut msg_buf = [0u8; 1024];
                         match cobs::decode(packet, &mut msg_buf) {
                             Ok(n) => {
                                 self.handle_packet(&msg_buf[..n])?;
                             },
+                            Err(cobs::Error::SourceTooShort) => {
+                                println!("Error:      Incomplete Packet")
+                            },
                             Err(e) => {
-                                println!("Error: {:?}", e)
+                                println!("Error:      {:?}", e)
                             }
                         }
 
@@ -97,7 +97,7 @@ impl Console {
         let mut err = ::std::io::stderr();
         match msg {
             Message::Boot(value) => {
-                write!(out, "Boot: {}\r\n", String::from_utf8_lossy(value))?;
+                write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
             },
             Message::Stdout(ref value) => {
                 out.write(value)?;
@@ -106,15 +106,15 @@ impl Console {
                 err.write(value)?;
             },
             Message::Exit(ref value) => {
-                write!(err, "Exit: {}\r\n", value[0])?;
+                write!(err, "Exit:       {}\r\n", value[0])?;
                 process::exit(value[0] as i32);
                 
             },
             Message::Exception(ref value) => {
-                write!(err, "Exception: {}\r\n", String::from_utf8_lossy(value))?;            
+                write!(err, "Exception:  {}\r\n", String::from_utf8_lossy(value))?;            
             },
             Message::Panic(ref value) => {
-                write!(err, "Panic: {}\r\n", String::from_utf8_lossy(value))?;
+                write!(err, "Panic:      {}\r\n", String::from_utf8_lossy(value))?;
             },            
             _ => {
                 write!(err, "{:?}", msg)?;
