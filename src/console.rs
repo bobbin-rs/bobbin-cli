@@ -50,6 +50,19 @@ impl Console {
         let mut buf = [0u8; 1024];
         let mut out = ::std::io::stdout();
         loop {
+            let mut n = ::std::io::stdin().read(&mut buf).unwrap();
+            if n > 0 { 
+                // println!("read {}: {:?}", n, &buf[..n]);
+                let n = self.port.write(&mut buf[..n]).unwrap();
+                self.port.flush().unwrap();
+                println!("Sent {}: {:?}", n, &buf[..n]);
+                // let n = self.port.write(&mut buf[..n]).unwrap();
+                // println!("sending null");
+                // buf[0] = b'A';                
+                // buf[1] = 0;
+                // let n = self.port.write(&mut buf[..1]).unwrap();
+                // println!("sent {}", n);
+            }
             match self.port.read(&mut buf[..]) {
                 Ok(n) => {
                     try!(out.write(&buf[..n]));
@@ -109,14 +122,13 @@ impl Console {
             Message::Boot(value) => {
                 write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
                 if let Some(ref filter) = self.test_filter {
-                    println!("Start tests: {:?}", filter);
-
                     let msg = packet::Message::Run(b"test");
                     let mut tmp = [0u8; 256];
                     let pkt = packet::encode_message(&mut tmp, msg).unwrap();
                     let mut buf = [0u8; 256];
                     let mut w = cobs::Writer::new(&mut buf);
                     w.encode_packet(pkt).unwrap();
+                    ::std::thread::sleep(Duration::from_millis(100));
                     println!("Sending {:?}", w.as_ref());
                     let n = self.port.write(w.as_ref()).unwrap();
                     println!("Sent {} bytes", n);
