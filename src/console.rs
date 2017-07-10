@@ -18,6 +18,20 @@ pub fn open(path: &str) -> Result<Console> {
     Ok(Console{ port: port, test_filter: None })
 }
 
+fn write_bytes(port: &mut SerialPort, buf: &[u8]) -> Result<usize> {
+    let delay = 100;    
+    ::std::thread::sleep(Duration::from_millis(delay));
+    Ok(port.write(buf)?)
+    
+    // for i in 0..buf.len() {
+    //     ::std::thread::sleep(Duration::from_millis(delay));
+    //     while port.write(&buf[i..i+1])? != 1 {
+    //         ::std::thread::sleep(Duration::from_millis(delay));
+    //     }
+    // }
+    // Ok(buf.len())    
+}
+
 pub struct Console {
     port: serial::SystemPort,
     test_filter: Option<String>
@@ -50,7 +64,7 @@ impl Console {
         let mut buf = [0u8; 1024];
         let mut out = ::std::io::stdout();
         loop {
-            let mut n = ::std::io::stdin().read(&mut buf).unwrap();
+            let n = ::std::io::stdin().read(&mut buf).unwrap();
             if n > 0 { 
                 // println!("read {}: {:?}", n, &buf[..n]);
                 let n = self.port.write(&mut buf[..n]).unwrap();
@@ -75,7 +89,22 @@ impl Console {
 
     pub fn view_packet(&mut self) -> Result<()> {
         self.port.set_timeout(Duration::from_millis(1000))?;
-        
+        let mut i = 0;
+        let delay = 0;
+        loop {
+            if i == 10 {
+                ::std::thread::sleep(Duration::from_millis(500));
+                i = 0;
+            }
+            println!("{}", i);
+            let n = write_bytes(&mut self.port, b"a")?;            
+            // ::std::thread::sleep(Duration::from_millis(delay));
+            // let n = write_bytes(&mut self.port, b"b")?;
+            // ::std::thread::sleep(Duration::from_millis(delay));
+            i += 1;
+        }
+    }
+    pub fn view_packetx(&mut self) -> Result<()> {        
         let mut buf = [0u8; 1024];
         let mut b = cobs::Buffer::new(&mut buf);
         loop {
@@ -115,6 +144,15 @@ impl Console {
         self.handle_message(msg)
     }
 
+    // fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    //     for i in 0..buf.len() {
+    //         while self.port.write(&buf[i..i+1])? != 1 {
+    //             ::std::thread::sleep(Duration::from_millis(10));
+    //         }
+    //     }
+    //     Ok(buf.len())
+    // }
+
     fn handle_message(&mut self, msg: Message) -> Result<()> {
         let mut out = ::std::io::stdout();
         let mut err = ::std::io::stderr();
@@ -122,21 +160,71 @@ impl Console {
             Message::Boot(value) => {
                 write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
                 if let Some(ref filter) = self.test_filter {
+                    // let buf = &[6, 2, 3, 116, 101, 115, 116, 0];
+                    // let buf = &[6, 2, 3, 116, 101, 115, 115, 0];
+                    // let buf = &[10, 10, 10, 10, 10, 10, 10, 10, 0]; // good 
+                    // let buf = &[10, 10, 10, 10, 10, 10, 10, 0]; // bad
+                    // let buf = &[10, 10, 10, 10, 10, 10, 0]; // good
+                    // let buf = &[10, 10, 10, 10, 10, 10, 10, 10]; // bad
+                    // let buf = &[1, 2, 3, 4, 5, 6, 7, 8]; // bad
+                    // let buf = &[116, 101, 115, 116, 116, 101, 115, 116]; // bad
+                    // println!("Sending {:?}", buf);
+                    // // let n = self.port.write(buf).unwrap();
+                    // let n = write_bytes(&mut self.port, buf)?;
+                    // // for i in 0..buf.len() {
+                    // //     while self.port.write(&buf[i..i+1])? != 1 {
+                    // //         ::std::thread::sleep(Duration::from_millis(0));
+                    // //     }
+                    // // }                    
+                    // println!("Sent {} bytes", n);
+
+
+                    // // let msg = packet::Message::Stdin(b"tes");
+                    // let msg = packet::Message::Run(b"tes");
+                    // let mut tmp = [0u8; 256];
+                    // let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+                    // let mut buf = [0u8; 256];
+                    // let mut w = cobs::Writer::new(&mut buf);
+                    // w.encode_packet(pkt).unwrap();
+                    // //::std::thread::sleep(Duration::from_millis(0));
+                    // println!("Sending {:?}", w.as_ref());
+                    // let n = self.port.write(w.as_ref()).unwrap();
+                    // println!("Sent {} bytes", n);
+
+
+                    // let buf = b"Hello, World";
+                    // println!("Sending {:?}", buf);
+                    // let n = self.port.write(buf).unwrap();
+                    // println!("Sent {} bytes", n);
+
+
                     let msg = packet::Message::Run(b"test");
                     let mut tmp = [0u8; 256];
                     let pkt = packet::encode_message(&mut tmp, msg).unwrap();
                     let mut buf = [0u8; 256];
                     let mut w = cobs::Writer::new(&mut buf);
                     w.encode_packet(pkt).unwrap();
-                    ::std::thread::sleep(Duration::from_millis(100));
-                    println!("Sending {:?}", w.as_ref());
-                    let n = self.port.write(w.as_ref()).unwrap();
+                    // let n = self.port.write(w.as_ref()).unwrap();
+                    let n = write_bytes(&mut self.port, w.as_ref())?;
                     println!("Sent {} bytes", n);
 
                 }
             },
             Message::Stdout(ref value) => {
                 out.write(value)?;
+                if let Some(ref filter) = self.test_filter {
+                    let msg = packet::Message::Stdin(b"hello, world");
+                    let mut tmp = [0u8; 1024];
+                    let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+                    let mut buf = [0u8; 1024];
+                    let mut w = cobs::Writer::new(&mut buf);
+                    w.encode_packet(pkt).unwrap();
+                    ::std::thread::sleep(Duration::from_millis(10));
+                    // let n = self.port.write(w.as_ref()).unwrap();
+                    let n = write_bytes(&mut self.port, w.as_ref())?;
+                    println!("Sent {} bytes", n);
+
+                }                
             },
             Message::Stderr(ref value) => {
                 err.write(value)?;
