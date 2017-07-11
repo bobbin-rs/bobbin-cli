@@ -21,8 +21,8 @@ pub fn open(path: &str) -> Result<Console> {
 
 fn write_bytes(port: &mut SerialPort, buf: &[u8]) -> Result<usize> {
     let mut n = 0;
-    for chunk in buf.chunks(4) {
-        ::std::thread::sleep(Duration::from_millis(1));
+    for chunk in buf.chunks(256) {
+        //::std::thread::sleep(Duration::from_millis(1));
         n += port.write(&chunk)?
     }
     Ok(n)
@@ -110,12 +110,12 @@ impl Console {
         }
     }
 
-    pub fn view_packet4(&mut self) -> Result<()> {
+    pub fn view_packet_test(&mut self) -> Result<()> {
         ::std::thread::sleep(Duration::from_millis(500));
         self.port.set_timeout(Duration::from_millis(100))?;
         let mut i = 0;
         let mut total = 0;
-        let out = b"Hello, World ABCDEFGH 12345678";
+        let out = b"Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678 Hello, World ABCDEFGH 12345678";
         let mut buf = [0u8; 1024];
         loop {
             let n = write_bytes(&mut self.port, &out[..])?;
