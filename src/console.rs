@@ -19,17 +19,12 @@ pub fn open(path: &str) -> Result<Console> {
 }
 
 fn write_bytes(port: &mut SerialPort, buf: &[u8]) -> Result<usize> {
-    let delay = 100;    
-    ::std::thread::sleep(Duration::from_millis(delay));
-    Ok(port.write(buf)?)
-    
-    // for i in 0..buf.len() {
-    //     ::std::thread::sleep(Duration::from_millis(delay));
-    //     while port.write(&buf[i..i+1])? != 1 {
-    //         ::std::thread::sleep(Duration::from_millis(delay));
-    //     }
-    // }
-    // Ok(buf.len())    
+    let mut n = 0;
+    for chunk in buf.chunks(7) {
+        ::std::thread::sleep(Duration::from_millis(1));
+        n += port.write(&chunk)?
+    }
+    Ok(n)
 }
 
 pub struct Console {
@@ -87,24 +82,107 @@ impl Console {
         //Ok(())
     }
 
-    pub fn view_packet(&mut self) -> Result<()> {
-        self.port.set_timeout(Duration::from_millis(1000))?;
+    pub fn view_packet_5(&mut self) -> Result<()> {
+        ::std::thread::sleep(Duration::from_millis(500));
+        self.port.set_timeout(Duration::from_millis(100))?;
+        let mut i = 0;
+        let total = 0;
+        let out = b"Hello, World";
+        let mut buf = [0u8; 1024];        
+        loop {
+            ::std::thread::sleep(Duration::from_millis(500));            
+            let msg = packet::Message::Stdin(b"hello, world");
+            let mut tmp = [0u8; 1024];
+            let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+            let mut pbuf = [0u8; 1024];
+            let mut w = cobs::Writer::new(&mut pbuf);
+            w.encode_packet(pkt).unwrap();
+            let n = write_bytes(&mut self.port, w.as_ref())?;
+            println!("Sent {} bytes", n);
+
+            let x = match self.port.read(&mut buf) {
+                Ok(x) => x,
+                _ => 0,
+            };
+            println!("{}: {} {} in {} {:?}", i, n, total, x, &buf[..x]);
+            i += 1;
+        }
+    }
+
+    pub fn view_packet4(&mut self) -> Result<()> {
+        ::std::thread::sleep(Duration::from_millis(500));
+        self.port.set_timeout(Duration::from_millis(100))?;
+        let mut i = 0;
+        let mut total = 0;
+        let out = b"Hello, World ABCDEFGH 12345678";
+        let mut buf = [0u8; 1024];
+        loop {
+            let n = write_bytes(&mut self.port, &out[..])?;
+            total += n;
+            let x = match self.port.read(&mut buf) {
+                Ok(x) => x,
+                _ => 0,
+            };
+            println!("{}: {} {} in {} {}", i, n, total, x, String::from_utf8_lossy(&buf[..x]));
+            i += 1;
+        }
+    }
+    pub fn view_packet_3(&mut self) -> Result<()> {
+        ::std::thread::sleep(Duration::from_millis(500));
+        self.port.set_timeout(Duration::from_millis(100))?;
+        let l_count = 1;
+        let l_delay = 1;        
+        let p_delay = 0;
+        let out = [0u8; 4];
+        let mut total = 0;
+        loop {
+            for i in 0..l_count {
+                //::std::thread::sleep(Duration::from_millis(p_delay));
+                match self.port.write(&out[..]) {
+                    Ok(n) => println!("{}: {} {}", i, n, total),
+                    Err(e) => {
+                        println!("{}: {:?}", i, e);
+                        bail!("write error")
+                    },
+                }
+                total += out.len();
+            }
+            // println!("");
+            ::std::thread::sleep(Duration::from_millis(l_delay));
+        }
+    }
+
+    pub fn view_packet_2(&mut self) -> Result<()> {
+        //self.port.set_timeout(Duration::from_millis(100))?;
         let mut i = 0;
         let delay = 0;
+        let mut total = 0;
+        ::std::thread::sleep(Duration::from_millis(500));
         loop {
-            if i == 10 {
-                ::std::thread::sleep(Duration::from_millis(500));
+            if i == 4 {
+                println!("");
+                ::std::thread::sleep(Duration::from_millis(500));                
                 i = 0;
             }
-            println!("{}", i);
-            let n = write_bytes(&mut self.port, b"a")?;            
+            //println!("{}", i);
+            let out = [0u8; 4];
+            // println!("out: {} / {}{:?}", &out[..]);
+            match write_bytes(&mut self.port, &out[..]) {
+                Ok(n) => {
+                    total += n;
+                    println!("{}: {} / {} - {}", i, n, out.len(), total);
+                },
+                _ => {
+                    println!("...");
+                }
+            }
             // ::std::thread::sleep(Duration::from_millis(delay));
             // let n = write_bytes(&mut self.port, b"b")?;
             // ::std::thread::sleep(Duration::from_millis(delay));
             i += 1;
         }
     }
-    pub fn view_packetx(&mut self) -> Result<()> {        
+    pub fn view_packet(&mut self) -> Result<()> {        
         let mut buf = [0u8; 1024];
         let mut b = cobs::Buffer::new(&mut buf);
         loop {
@@ -159,7 +237,10 @@ impl Console {
         match msg {
             Message::Boot(value) => {
                 write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
-                if let Some(ref filter) = self.test_filter {
+                self.send_message(packet::Message::Run(b"test"))?;            
+                ::std::thread::sleep(Duration::from_millis(500));    
+                self.send_message(packet::Message::Stdin(b"hello, world!"))?;                
+                // if let Some(ref filter) = self.test_filter {
                     // let buf = &[6, 2, 3, 116, 101, 115, 116, 0];
                     // let buf = &[6, 2, 3, 116, 101, 115, 115, 0];
                     // let buf = &[10, 10, 10, 10, 10, 10, 10, 10, 0]; // good 
@@ -198,33 +279,35 @@ impl Console {
                     // println!("Sent {} bytes", n);
 
 
-                    let msg = packet::Message::Run(b"test");
-                    let mut tmp = [0u8; 256];
-                    let pkt = packet::encode_message(&mut tmp, msg).unwrap();
-                    let mut buf = [0u8; 256];
-                    let mut w = cobs::Writer::new(&mut buf);
-                    w.encode_packet(pkt).unwrap();
-                    // let n = self.port.write(w.as_ref()).unwrap();
-                    let n = write_bytes(&mut self.port, w.as_ref())?;
-                    println!("Sent {} bytes", n);
 
-                }
+                    // let mut tmp = [0u8; 256];
+                    // let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+                    // let mut buf = [0u8; 256];
+                    // let mut w = cobs::Writer::new(&mut buf);
+                    // w.encode_packet(pkt).unwrap();
+                    // // let n = self.port.write(w.as_ref()).unwrap();
+                    // println!("Sending {:?}", w.as_ref());
+                    // let n = write_bytes(&mut self.port, w.as_ref())?;
+                    // println!("Sent {} bytes", n);
+
+                // }
             },
             Message::Stdout(ref value) => {
                 out.write(value)?;
-                if let Some(ref filter) = self.test_filter {
-                    let msg = packet::Message::Stdin(b"hello, world");
-                    let mut tmp = [0u8; 1024];
-                    let pkt = packet::encode_message(&mut tmp, msg).unwrap();
-                    let mut buf = [0u8; 1024];
-                    let mut w = cobs::Writer::new(&mut buf);
-                    w.encode_packet(pkt).unwrap();
-                    ::std::thread::sleep(Duration::from_millis(10));
-                    // let n = self.port.write(w.as_ref()).unwrap();
-                    let n = write_bytes(&mut self.port, w.as_ref())?;
-                    println!("Sent {} bytes", n);
+                // if let Some(ref filter) = self.test_filter {
+                //     let msg = packet::Message::Stdin(b"hello, world");
+                //     let mut tmp = [0u8; 1024];
+                //     let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+                //     let mut buf = [0u8; 1024];
+                //     let mut w = cobs::Writer::new(&mut buf);
+                //     w.encode_packet(pkt).unwrap();
+                //     ::std::thread::sleep(Duration::from_millis(10));
+                //     // let n = self.port.write(w.as_ref()).unwrap();
+                //     println!("Sending {:?}", w.as_ref());
+                //     let n = write_bytes(&mut self.port, w.as_ref())?;
+                //     println!("Sent {} bytes", n);
 
-                }                
+                // }                
             },
             Message::Stderr(ref value) => {
                 err.write(value)?;
@@ -244,6 +327,18 @@ impl Console {
                 write!(err, "{:?}", msg)?;
             }
         }
+        Ok(())
+    }
+    pub fn send_message(&mut self, msg: packet::Message) -> Result<()> {
+        let mut tmp = [0u8; 256];
+        let pkt = packet::encode_message(&mut tmp, msg).unwrap();
+        let mut buf = [0u8; 256];
+        let mut w = cobs::Writer::new(&mut buf);
+        w.encode_packet(pkt).unwrap();
+        // let n = self.port.write(w.as_ref()).unwrap();
+        println!("Sending {:?}", w.as_ref());
+        let n = write_bytes(&mut self.port, w.as_ref())?;
+        println!("Sent {} bytes", n);
         Ok(())
     }
 }
