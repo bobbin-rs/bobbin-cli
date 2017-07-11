@@ -12,15 +12,16 @@ use Result;
 pub fn open(path: &str) -> Result<Console> {
     let mut port = try!(serial::open(path));
     try!(port.reconfigure(&|settings| {
-            settings.set_baud_rate(serial::Baud115200).unwrap();
-            Ok(())
+        settings.set_baud_rate(serial::Baud115200).unwrap();
+        settings.set_flow_control(serial::FlowControl::FlowNone);
+        Ok(())
     }));
     Ok(Console{ port: port, test_filter: None })
 }
 
 fn write_bytes(port: &mut SerialPort, buf: &[u8]) -> Result<usize> {
     let mut n = 0;
-    for chunk in buf.chunks(7) {
+    for chunk in buf.chunks(4) {
         ::std::thread::sleep(Duration::from_millis(1));
         n += port.write(&chunk)?
     }
@@ -199,7 +200,7 @@ impl Console {
                                 self.handle_packet(&msg_buf[..n])?;
                             },
                             Err(cobs::Error::SourceTooShort) => {
-                                println!("Error:      Incomplete Packet")
+                                println!("Error:      Incomplete Packet: {:?}", packet)
                             },
                             Err(e) => {
                                 println!("Error:      {:?}", e)
@@ -239,7 +240,7 @@ impl Console {
                 write!(out, "Boot:       {}\r\n", String::from_utf8_lossy(value))?;
                 self.send_message(packet::Message::Run(b"test"))?;            
                 ::std::thread::sleep(Duration::from_millis(500));    
-                self.send_message(packet::Message::Stdin(b"hello, world!"))?;                
+                 self.send_message(packet::Message::Stdin(b"hello, world!"))?;                
                 // if let Some(ref filter) = self.test_filter {
                     // let buf = &[6, 2, 3, 116, 101, 115, 116, 0];
                     // let buf = &[6, 2, 3, 116, 101, 115, 115, 0];
@@ -336,9 +337,9 @@ impl Console {
         let mut w = cobs::Writer::new(&mut buf);
         w.encode_packet(pkt).unwrap();
         // let n = self.port.write(w.as_ref()).unwrap();
-        println!("Sending {:?}", w.as_ref());
+        println!("> {:?}", w.as_ref());
         let n = write_bytes(&mut self.port, w.as_ref())?;
-        println!("Sent {} bytes", n);
+
         Ok(())
     }
 }
