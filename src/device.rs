@@ -1,7 +1,7 @@
 use sha1;
-#[cfg(target_os="macos")]
+#[cfg(target_os = "macos")]
 use ioreg;
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 use sysfs;
 use clap::ArgMatches;
 use std::path::PathBuf;
@@ -9,7 +9,7 @@ use std::fs;
 use std::io::Read;
 use std::fmt::Write;
 use config::Config;
-#[cfg(feature="stlink")]
+#[cfg(feature = "stlink")]
 use stlink;
 use Result;
 
@@ -39,14 +39,28 @@ pub trait Device {
     fn hash(&self) -> String {
         self.usb().hash()
     }
-    fn is_unknown(&self) -> bool { self.device_type().is_none() }
-    fn device_type(&self) -> Option<&str> { None }
-    fn loader_type(&self) -> Option<&str> { None }
-    fn debugger_type(&self) -> Option<&str> { None }
-    fn cdc_path(&self) -> Option<String> { None }
-    fn msd_path(&self) -> Option<PathBuf> { None }
-    fn bossa_path(&self) -> Option<String> { None }
-    
+    fn is_unknown(&self) -> bool {
+        self.device_type().is_none()
+    }
+    fn device_type(&self) -> Option<&str> {
+        None
+    }
+    fn loader_type(&self) -> Option<&str> {
+        None
+    }
+    fn debugger_type(&self) -> Option<&str> {
+        None
+    }
+    fn cdc_path(&self) -> Option<String> {
+        None
+    }
+    fn msd_path(&self) -> Option<PathBuf> {
+        None
+    }
+    fn bossa_path(&self) -> Option<String> {
+        None
+    }
+
     fn jlink_supported(&self) -> bool {
         self.device_type() == Some("JLink")
     }
@@ -54,10 +68,16 @@ pub trait Device {
     fn openocd_supported(&self) -> bool {
         self.openocd_serial().is_some()
     }
-    fn openocd_serial(&self) -> Option<String> { None }
+    fn openocd_serial(&self) -> Option<String> {
+        None
+    }
 
-    fn can_trace_itm(&self) -> bool { false }
-    fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> { unimplemented!() }
+    fn can_trace_itm(&self) -> bool {
+        false
+    }
+    fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
+        unimplemented!()
+    }
 }
 
 pub struct UnknownDevice {
@@ -91,24 +111,24 @@ impl Device for JLinkDevice {
         Some("JLink")
     }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", 
+        Some(format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             1,
         ))
     }
 
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             sysfs::cdc_path(path, "1.0")
         } else {
             None
         }
-    }    
+    }
 
-    
+
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("jlink_serial {}", self.usb.serial_number))
     }
@@ -133,7 +153,7 @@ impl Device for StLinkV2Device {
 
     fn debugger_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
     fn openocd_serial(&self) -> Option<String> {
         // see https://armprojects.wordpress.com/2016/08/21/debugging-multiple-stm32-in-eclipse-with-st-link-v2-and-openocd/
@@ -145,34 +165,32 @@ impl Device for StLinkV2Device {
 
         for c in self.usb.serial_number.chars() {
             let c = c as u8;
-            let b = if c > 0x7f {
-                0x3f
-            } else {
-                c
-            };
+            let b = if c > 0x7f { 0x3f } else { c };
             write!(out, "\\x{:02X}", b).unwrap();
         }
-        write!(out,"\"").unwrap();
+        write!(out, "\"").unwrap();
         Some(out)
-    }    
+    }
 
-    #[cfg(feature="stlink")]
-    fn can_trace_itm(&self) -> bool { true }
+    #[cfg(feature = "stlink")]
+    fn can_trace_itm(&self) -> bool {
+        true
+    }
 
     #[allow(unreachable_code)]
-    #[cfg(feature="stlink")]
+    #[cfg(feature = "stlink")]
     fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
-      
+
         let mut ctx = stlink::context()?;
         let cfg = stlink::Config::new(
-            self.usb.vendor_id, 
-            self.usb.product_id, 
+            self.usb.vendor_id,
+            self.usb.product_id,
             0x2,
-            0x81, 
+            0x81,
             0x83,
             target_clk,
             trace_clk,
-            &self.usb.serial_number
+            &self.usb.serial_number,
         );
         if let Some(mut d) = ctx.connect(cfg)? {
             println!("configure");
@@ -182,9 +200,9 @@ impl Device for StLinkV2Device {
 
         } else {
             bail!("No device found");
-        }        
+        }
         unreachable!()
-    }    
+    }
 }
 
 pub struct StLinkV21Device {
@@ -202,56 +220,59 @@ impl Device for StLinkV21Device {
 
     fn loader_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
     fn debugger_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", 
+        Some(format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             3,
         ))
-    }    
+    }
 
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             sysfs::cdc_path(path, "1.2")
         } else {
             None
         }
-    }    
+    }
 
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("hla_serial {}", self.usb.serial_number))
-    }        
+    }
 
-    #[cfg(feature="stlink")]
-    fn can_trace_itm(&self) -> bool { true }
+    #[cfg(feature = "stlink")]
+    fn can_trace_itm(&self) -> bool {
+        true
+    }
 
-    #[cfg(feature="stlink")]
+    #[cfg(feature = "stlink")]
     #[allow(unreachable_code)]
     fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
         let mut ctx = stlink::context()?;
         let cfg = stlink::Config::new(
-            self.usb.vendor_id, 
+            self.usb.vendor_id,
             self.usb.product_id,
             0x1,
-            0x81, 
+            0x81,
             0x82,
             target_clk,
             trace_clk,
-            &self.usb.serial_number);
+            &self.usb.serial_number,
+        );
         if let Some(mut d) = ctx.connect(cfg)? {
             d.configure(false)?;
             d.run_trace()?;
 
         } else {
             bail!("No device found");
-        }        
+        }
         unreachable!()
     }
 }
@@ -271,29 +292,33 @@ impl Device for TiIcdiDevice {
 
     fn loader_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
     fn debugger_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", &self.usb.serial_number[..7], 1))
-    }    
+        Some(format!(
+            "/dev/cu.usbmodem{}{}",
+            &self.usb.serial_number[..7],
+            1
+        ))
+    }
 
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             sysfs::cdc_path(path, "1.0")
         } else {
             None
         }
-    }    
+    }
 
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("hla_serial {}", self.usb.serial_number))
-    }        
+    }
 }
 
 pub struct CmsisDapDevice {
@@ -315,29 +340,29 @@ impl Device for CmsisDapDevice {
 
     fn debugger_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", 
+        Some(format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             2,
         ))
     }
 
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             sysfs::cdc_path(path, "1.1")
         } else {
             None
         }
-    }    
+    }
 
-    
+
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
-    }       
+    }
 }
 
 pub struct DapLinkDevice {
@@ -356,43 +381,46 @@ impl Device for DapLinkDevice {
     fn loader_type(&self) -> Option<&str> {
         Some("OpenOCD")
     }
-    
+
     fn debugger_type(&self) -> Option<&str> {
         Some("OpenOCD")
-    }    
+    }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", 
+        Some(format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             2,
         ))
     }
 
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             sysfs::cdc_path(path, "1.1")
         } else {
             None
         }
-    }    
+    }
 
     fn msd_path(&self) -> Option<PathBuf> {
         // Look in /Volumes/DAPLINK*/ for DETAILS.TXT
         // Look for Unique ID line == serial number
         if let Ok(volumes) = fs::read_dir("/Volumes/") {
-            for volume in volumes {                
-                if let Ok(volume) = volume {                    
+            for volume in volumes {
+                if let Ok(volume) = volume {
                     //println!("checking {:?} {}", volume.path(), volume.path().to_string_lossy().starts_with("/Volumes/DAPLINK") );
-                    if volume.path().to_string_lossy().starts_with("/Volumes/DAPLINK") {                        
+                    if volume.path().to_string_lossy().starts_with(
+                        "/Volumes/DAPLINK",
+                    )
+                    {
                         let details = volume.path().join("DETAILS.TXT");
                         let mut f = fs::File::open(details).expect("Error opening DETAILS.TXT");
                         let mut s = String::new();
                         f.read_to_string(&mut s).expect("Error reading details");
                         if s.contains(&self.usb.serial_number) {
-                            return Some(volume.path())
-                        }                        
+                            return Some(volume.path());
+                        }
                     }
                 }
             }
@@ -402,7 +430,7 @@ impl Device for DapLinkDevice {
 
     fn openocd_serial(&self) -> Option<String> {
         Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
-    }       
+    }
 }
 
 pub struct FeatherDevice {
@@ -422,13 +450,13 @@ impl Device for FeatherDevice {
         Some("Bossa")
     }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn bossa_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}", 
+        Some(format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             1,
         ))
-    }    
+    }
 }
 
 pub struct TeensyDevice {
@@ -459,12 +487,12 @@ impl<'a> From<&'a ArgMatches<'a>> for DeviceFilter {
     fn from(other: &ArgMatches) -> DeviceFilter {
         DeviceFilter {
             all: other.is_present("all"),
-            device: other.value_of("device").map(String::from)
+            device: other.value_of("device").map(String::from),
         }
     }
 }
 
-pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceFilter {        
+pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceFilter {
     let device = if let Some(d) = args.value_of("device") {
         Some(String::from(d))
     } else {
@@ -490,7 +518,7 @@ pub fn filter(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> DeviceF
     DeviceFilter {
         all: args.is_present("all") || cmd_args.is_present("all"),
         device: device,
-    }    
+    }
 }
 
 pub fn lookup(usb: UsbDevice) -> Box<Device> {
@@ -506,34 +534,37 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x239a, 0x000b) => Box::new(FeatherDevice { usb: usb }),
         (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
-        _ => Box::new(UnknownDevice { usb: usb })
+        _ => Box::new(UnknownDevice { usb: usb }),
     }
 }
 
 
-pub fn enumerate() -> Result<Vec<Box<Device>>> {    
-    #[cfg(target_os="macos")]
-    return Ok(ioreg::enumerate()?.into_iter().map(lookup).collect());
-    
-    #[cfg(target_os="linux")]
-    return Ok(sysfs::enumerate()?.into_iter().map(lookup).collect());
+pub fn enumerate() -> Result<Vec<Box<Device>>> {
+    #[cfg(target_os = "macos")] return Ok(ioreg::enumerate()?.into_iter().map(lookup).collect());
+
+    #[cfg(target_os = "linux")] return Ok(sysfs::enumerate()?.into_iter().map(lookup).collect());
 }
 
 pub fn search(filter: &DeviceFilter) -> Result<Vec<Box<Device>>> {
-    Ok(enumerate()?.into_iter().filter(|d| {
-        if !filter.all {
-            if d.is_unknown() {
-                return false
-            }
-        }
+    Ok(
+        enumerate()?
+            .into_iter()
+            .filter(|d| {
+                if !filter.all {
+                    if d.is_unknown() {
+                        return false;
+                    }
+                }
 
-        if let Some(ref device) = filter.device {
-            if !d.hash().starts_with(device) {
-                return false
-            }
-        }
+                if let Some(ref device) = filter.device {
+                    if !d.hash().starts_with(device) {
+                        return false;
+                    }
+                }
 
 
-        true
-    }).collect())
+                true
+            })
+            .collect(),
+    )
 }

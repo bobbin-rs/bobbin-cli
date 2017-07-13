@@ -1,4 +1,4 @@
-use clap::{ArgMatches};
+use clap::ArgMatches;
 use Result;
 use toml::value::{Value, Table};
 use std::io::Read;
@@ -23,15 +23,15 @@ pub struct Config {
 
 impl Config {
     pub fn default_target(&self) -> Option<PathBuf> {
-        self.cargo_cfg["build"]
-            .as_table().unwrap()["target"]
-            .as_str().map(PathBuf::from)
+        self.cargo_cfg["build"].as_table().unwrap()["target"]
+            .as_str()
+            .map(PathBuf::from)
     }
 
     pub fn default_binary(&self) -> Option<PathBuf> {
-        self.cargo["package"]
-            .as_table().unwrap()["name"]
-            .as_str().map(PathBuf::from)
+        self.cargo["package"].as_table().unwrap()["name"]
+            .as_str()
+            .map(PathBuf::from)
     }
 
     pub fn default_filter(&self) -> Option<&Value> {
@@ -63,9 +63,8 @@ impl Config {
             }
         } else {
             None
-        }        
+        }
     }
-
 }
 
 pub fn read_cargo_config() -> Result<Value> {
@@ -83,7 +82,7 @@ pub fn read_cargo() -> Result<Value> {
 pub fn read_toml<P: AsRef<Path>>(path: P) -> Result<Value> {
     let path = path.as_ref();
     if !path.exists() {
-        return Ok(Value::Table(Table::new()))
+        return Ok(Value::Table(Table::new()));
     }
     let mut f = File::open(path)?;
     let mut data = String::new();

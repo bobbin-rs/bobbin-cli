@@ -9,11 +9,11 @@ use Result;
 pub fn open(path: &str) -> Result<Console> {
     let mut port = try!(serial::open(path));
     try!(port.reconfigure(&|settings| {
-            settings.set_baud_rate(serial::Baud115200).unwrap();
-            settings.set_flow_control(serial::FlowControl::FlowNone);
-            Ok(())
+        settings.set_baud_rate(serial::Baud115200).unwrap();
+        settings.set_flow_control(serial::FlowControl::FlowNone);
+        Ok(())
     }));
-    Ok(Console{ port: port })
+    Ok(Console { port: port })
 }
 
 pub struct Console {
@@ -27,7 +27,7 @@ impl Console {
         loop {
             match self.port.read(&mut buf[..]) {
                 Ok(0) => return Ok(()),
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(_) => return Ok(()),
             }
         }
@@ -41,8 +41,8 @@ impl Console {
             match self.port.read(&mut buf[..]) {
                 Ok(n) => {
                     try!(out.write(&buf[..n]));
-                },
-                Err(_) => {},
+                }
+                Err(_) => {}
             }
         }
         //Ok(())
@@ -54,10 +54,10 @@ impl Console {
 
         self.port.set_timeout(Duration::from_millis(100))?;
         let mut buf = [0u8; 1024];
-        let mut line: Vec<u8>  = Vec::new();
-        let start_time: Instant = Instant::now(); 
+        let mut line: Vec<u8> = Vec::new();
+        let start_time: Instant = Instant::now();
         let mut line_time: Instant = start_time;
-        loop {            
+        loop {
             match self.port.read(&mut buf[..]) {
                 Ok(n) => {
                     for b in (&buf[..n]).iter() {
@@ -69,9 +69,8 @@ impl Console {
                             line.push(*b);
                         }
                     }
-                    
-                },
-                Err(_) => {},
+                }
+                Err(_) => {}
             }
             let now = Instant::now();
             if now.duration_since(line_time) > Duration::from_millis(LINE_TIMEOUT_MS) {
@@ -81,7 +80,7 @@ impl Console {
             if now.duration_since(start_time) > Duration::from_millis(TEST_TIMEOUT_MS) {
                 println!("[timeout:test]");
                 process::exit(1);
-            }            
+            }
         }
         //Ok(())
     }

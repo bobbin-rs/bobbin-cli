@@ -11,9 +11,9 @@ extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
 
-#[cfg(feature="stlink")]
+#[cfg(feature = "stlink")]
 extern crate byteorder;
-#[cfg(feature="stlink")]
+#[cfg(feature = "stlink")]
 extern crate libusb;
 
 mod app;
@@ -26,12 +26,12 @@ mod debugger;
 mod printer;
 mod console;
 
-#[cfg(feature="stlink")]
+#[cfg(feature = "stlink")]
 mod stlink;
 
-#[cfg(target_os="macos")]
+#[cfg(target_os = "macos")]
 mod ioreg;
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 mod sysfs;
 
 
@@ -39,7 +39,7 @@ use errors::*;
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain! {
-        links {            
+        links {
         }
         foreign_links {
             Io(::std::io::Error);
@@ -54,7 +54,7 @@ mod errors {
 
 fn main() {
     if let Err(ref e) = run() {
-        use ::std::io::Write;
+        use std::io::Write;
         let stderr = &mut ::std::io::stderr();
         let errmsg = "Error writing to stderr";
 
@@ -79,17 +79,17 @@ fn run() -> Result<()> {
     let cfg = config::config(&args)?;
     let mut out = printer::printer().with_verbose(args.is_present("verbose"));
 
-    if let Some(cmd_args) = args.subcommand_matches("list") {        
+    if let Some(cmd_args) = args.subcommand_matches("list") {
         cmd::list(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("info") {        
+    } else if let Some(cmd_args) = args.subcommand_matches("info") {
         cmd::info(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("build") {        
+    } else if let Some(cmd_args) = args.subcommand_matches("build") {
         cmd::build(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("load") {        
+    } else if let Some(cmd_args) = args.subcommand_matches("load") {
         cmd::load(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("run") {        
+    } else if let Some(cmd_args) = args.subcommand_matches("run") {
         cmd::load(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("test") {        
+    } else if let Some(cmd_args) = args.subcommand_matches("test") {
         cmd::load(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("halt") {
         cmd::control(&cfg, &args, cmd_args, &mut out)
@@ -110,5 +110,5 @@ fn run() -> Result<()> {
     } else {
         println!("{}", args.usage());
         Ok(())
-    }    
+    }
 }

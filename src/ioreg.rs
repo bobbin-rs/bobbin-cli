@@ -1,4 +1,4 @@
-use ::errors::*;
+use errors::*;
 
 use device::UsbDevice;
 use std::process::Command;
@@ -22,7 +22,7 @@ impl<'a> From<&'a Plist> for UsbDevice {
                 }
             } else {
                 None
-            }            
+            }
         }
         fn get_string(p: &Plist, key: &str) -> String {
             if let Some(p_dict) = p.as_dictionary() {
@@ -53,12 +53,16 @@ impl<'a> From<&'a Plist> for UsbDevice {
 
 
 pub fn enumerate() -> Result<Vec<UsbDevice>> {
-    let output = try!(Command::new("ioreg").arg("-p").arg("IOUSB").arg("-lxa").output());    
+    let output = try!(
+        Command::new("ioreg")
+            .arg("-p")
+            .arg("IOUSB")
+            .arg("-lxa")
+            .output()
+    );
     let top = try!(Plist::read(Cursor::new(&output.stdout)));
     let mut items: Vec<UsbDevice> = Vec::new();
-    visit(&top, &mut |p| {
-        items.push(UsbDevice::from(p));
-    });
+    visit(&top, &mut |p| { items.push(UsbDevice::from(p)); });
     Ok(items)
 }
 
@@ -67,7 +71,7 @@ fn visit<F: FnMut(&Plist)>(p: &Plist, mut f: &mut F) {
         if p_dict.contains_key("idVendor") {
             f(p);
         }
-    }    
+    }
     if let Some(p_children) = children(p) {
         for c in p_children.iter() {
             visit(c, f);
@@ -78,7 +82,7 @@ fn visit<F: FnMut(&Plist)>(p: &Plist, mut f: &mut F) {
 fn children(p: &Plist) -> Option<&Vec<Plist>> {
     if let Some(p_dict) = p.as_dictionary() {
         if let Some(p_dict_entry) = p_dict.get("IORegistryEntryChildren") {
-            return p_dict_entry.as_array()
+            return p_dict_entry.as_array();
         }
     }
     None

@@ -34,15 +34,17 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(vendor_id: u16, 
-            product_id: u16, 
-            send_ep: u8, 
-            recv_ep: u8, 
-            trace_ep: u8, 
-            target_clk: u32,
-            trace_clk: u32,
-        serial_number: &str) -> Self {
-        Config { 
+    pub fn new(
+        vendor_id: u16,
+        product_id: u16,
+        send_ep: u8,
+        recv_ep: u8,
+        trace_ep: u8,
+        target_clk: u32,
+        trace_clk: u32,
+        serial_number: &str,
+    ) -> Self {
+        Config {
             vendor_id: vendor_id,
             product_id: product_id,
             send_ep: send_ep,
@@ -50,7 +52,7 @@ impl Config {
             trace_ep: trace_ep,
             target_clk: target_clk,
             trace_clk: trace_clk,
-            serial_number: String::from(serial_number) 
+            serial_number: String::from(serial_number),
         }
     }
 }
@@ -67,28 +69,35 @@ impl Context {
         for device in self.inner.devices()?.iter() {
             let device_desc = device.device_descriptor()?;
 
-            if device_desc.vendor_id() != cfg.vendor_id || device_desc.product_id() != cfg.product_id {
-                continue
+            if device_desc.vendor_id() != cfg.vendor_id ||
+                device_desc.product_id() != cfg.product_id
+            {
+                continue;
             }
-            
+
             let device_handle = device.open()?;
             let lang = device_handle.read_languages(timeout)?[0];
 
             if device_desc.serial_number_string_index().is_some() {
-                if device_handle.read_serial_number_string(lang, &device_desc, timeout)? == cfg.serial_number {
+                if device_handle.read_serial_number_string(
+                    lang,
+                    &device_desc,
+                    timeout,
+                )? == cfg.serial_number
+                {
                     return Ok(Some(Debugger {
                         config: cfg,
                         timeout: self.timeout,
                         device: device,
                         desc: device_desc,
                         handle: device_handle,
-                    }))
+                    }));
 
                 }
-            }            
+            }
         }
         Ok(None)
-    }    
+    }
 }
 
 pub struct Debugger<'a> {
@@ -96,7 +105,7 @@ pub struct Debugger<'a> {
     timeout: Duration,
     device: libusb::Device<'a>,
     desc: libusb::DeviceDescriptor,
-    handle: libusb::DeviceHandle<'a>,    
+    handle: libusb::DeviceHandle<'a>,
 }
 
 impl<'a> Debugger<'a> {
@@ -123,23 +132,52 @@ impl<'a> Debugger<'a> {
         let lang = self.handle.read_languages(timeout)?[0];
         println!("Vendor ID:    {:04x}", self.desc.vendor_id());
         println!("Product ID:   {:04x}", self.desc.product_id());
-        println!("Manufacturer: {}", self.handle.read_manufacturer_string(lang, &self.desc, timeout)?);
-        println!("Product:      {}", self.handle.read_product_string(lang, &self.desc, timeout)?);
-        println!("Serial #:     {}", self.handle.read_serial_number_string(lang, &self.desc, timeout)?);
+        println!(
+            "Manufacturer: {}",
+            self.handle.read_manufacturer_string(
+                lang,
+                &self.desc,
+                timeout,
+            )?
+        );
+        println!(
+            "Product:      {}",
+            self.handle.read_product_string(lang, &self.desc, timeout)?
+        );
+        println!(
+            "Serial #:     {}",
+            self.handle.read_serial_number_string(
+                lang,
+                &self.desc,
+                timeout,
+            )?
+        );
         Ok(())
     }
 
     pub fn send(&self, src: &[u8]) -> Result<usize> {
-        Ok(self.handle.write_bulk(self.config.send_ep, src, self.timeout)?)
+        Ok(self.handle.write_bulk(
+            self.config.send_ep,
+            src,
+            self.timeout,
+        )?)
     }
 
     pub fn recv(&self, dst: &mut [u8]) -> Result<usize> {
-        Ok(self.handle.read_bulk(self.config.recv_ep, dst, self.timeout)?)
+        Ok(self.handle.read_bulk(
+            self.config.recv_ep,
+            dst,
+            self.timeout,
+        )?)
     }
 
     pub fn trace_recv(&self, dst: &mut [u8]) -> Result<usize> {
-        Ok(self.handle.read_bulk(self.config.trace_ep, dst, self.timeout)?)
-    }    
+        Ok(self.handle.read_bulk(
+            self.config.trace_ep,
+            dst,
+            self.timeout,
+        )?)
+    }
 
     pub fn send_u32(&self, src: &[u32]) -> Result<usize> {
         self.send(util::u32_as_u8(src)).map(|v| v >> 2)
@@ -176,11 +214,11 @@ impl<'a> Debugger<'a> {
         self.send_req([GET_VERSION])?;
         self.recv(&mut buf)?;
         Ok(Version(buf))
-    }    
+    }
 
     pub fn voltage(&mut self) -> Result<f32> {
         let mut res = self.xfer([GET_TARGET_VOLTAGE], 8)?;
-        
+
         let adc0 = res.read_u32();
         let adc1 = res.read_u32();
 
@@ -206,7 +244,7 @@ impl<'a> Debugger<'a> {
 
     pub fn core_id(&mut self) -> Result<u32> {
         Ok(self.xfer([DEBUG_COMMAND, DEBUG_READCOREID], 4)?.read_u32())
-    }     
+    }
 
     pub fn enter_swd_mode(&mut self) -> Result<()> {
         self.cmd([DEBUG_COMMAND, DEBUG_APIV2_ENTER, DEBUG_ENTER_SWD])
@@ -227,11 +265,11 @@ impl<'a> Debugger<'a> {
     pub fn halt(&mut self) -> Result<()> {
         self.cmd([DEBUG_COMMAND, DEBUG_FORCEDEBUG])
     }
-    
+
     pub fn step(&mut self) -> Result<()> {
         self.cmd([DEBUG_COMMAND, DEBUG_STEPCORE])
     }
-   
+
 
     pub fn read_regs(&mut self) -> Result<Response> {
         let cmd = Request::new([DEBUG_COMMAND, DEBUG_APIV2_READALLREGS]);
@@ -248,11 +286,13 @@ impl<'a> Debugger<'a> {
     }
 
     pub fn write_reg(&mut self, reg: u8, value: u32) -> Result<()> {
-        let cmd = Request::new([DEBUG_COMMAND, DEBUG_APIV2_WRITEREG]).write_u8(reg).write_u32(value);
+        let cmd = Request::new([DEBUG_COMMAND, DEBUG_APIV2_WRITEREG])
+            .write_u8(reg)
+            .write_u32(value);
         let mut res = self.xfer(cmd, 2)?;
         let _ = res.read_u16();
         Ok(())
-    }    
+    }
 
     pub fn check_rw_status(&mut self) -> Result<()> {
         self.cmd([DEBUG_COMMAND, DEBUG_APIV2_GETLASTRWSTATUS])
@@ -315,7 +355,7 @@ impl<'a> Debugger<'a> {
     pub fn read_mem(&mut self, addr: u32, dst: &mut [u8]) -> Result<()> {
         // TODO: Read chunks, add support for 32bit
         for i in 0..dst.len() {
-            self.read_mem8(addr + i as u32, &mut dst[i..i+1])?;
+            self.read_mem8(addr + i as u32, &mut dst[i..i + 1])?;
         }
         Ok(())
     }
@@ -323,7 +363,7 @@ impl<'a> Debugger<'a> {
     pub fn write_mem(&mut self, addr: u32, src: &[u8]) -> Result<()> {
         // TODO: Write chunks, add support for 32bit
         for i in 0..src.len() {
-            self.write_mem8(addr + i as u32, &src[i..i+1])?;
+            self.write_mem8(addr + i as u32, &src[i..i + 1])?;
         }
         Ok(())
     }
@@ -335,28 +375,39 @@ impl<'a> Debugger<'a> {
     }
 
     pub fn write_debug(&mut self, addr: u32, value: u32) -> Result<()> {
-        self.cmd(Request::new([DEBUG_COMMAND, DEBUG_APIV2_WRITEDEBUGREG]).write_u32(addr).write_u32(value))
+        self.cmd(
+            Request::new([DEBUG_COMMAND, DEBUG_APIV2_WRITEDEBUGREG])
+                .write_u32(addr)
+                .write_u32(value),
+        )
     }
 
     pub fn trace_start_rx(&mut self, source_hz: u32) -> Result<()> {
-        self.cmd(Request::new([DEBUG_COMMAND, DEBUG_APIV2_START_TRACE_RX])
-            .write_u16(4096)
-            .write_u32(source_hz))
+        self.cmd(
+            Request::new([DEBUG_COMMAND, DEBUG_APIV2_START_TRACE_RX])
+                .write_u16(4096)
+                .write_u32(source_hz),
+        )
     }
 
     pub fn trace_stop_rx(&mut self) -> Result<()> {
         self.cmd([DEBUG_COMMAND, DEBUG_APIV2_STOP_TRACE_RX])
-    }    
+    }
 
     pub fn trace_bytes_available(&mut self) -> Result<u16> {
-        Ok(self.xfer([DEBUG_COMMAND, DEBUG_APIV2_GET_TRACE_NB], 2)?.read_u16())
+        Ok(
+            self.xfer([DEBUG_COMMAND, DEBUG_APIV2_GET_TRACE_NB], 2)?
+                .read_u16(),
+        )
     }
 
     pub fn trace_set_swdclk(&mut self, divisor: u16) -> Result<()> {
-        self.cmd(Request::new([DEBUG_COMMAND, DEBUG_APIV2_SWD_SET_FREQ]).write_u16(divisor))
-    }    
+        self.cmd(
+            Request::new([DEBUG_COMMAND, DEBUG_APIV2_SWD_SET_FREQ]).write_u16(divisor),
+        )
+    }
 
-    pub fn trace_read(&mut self, buf: &mut [u8]) -> Result<usize> {        
+    pub fn trace_read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let bytes_available = self.trace_bytes_available()?;
         let buf = &mut buf[..bytes_available as usize];
         if buf.len() > 0 {
@@ -366,12 +417,19 @@ impl<'a> Debugger<'a> {
         }
     }
 
-    pub fn trace_setup(&mut self, stim_bits: u32, sync_packets: u32, cpu_hz: u32, swo_hz: u32) -> Result<()> {
+    pub fn trace_setup(
+        &mut self,
+        stim_bits: u32,
+        sync_packets: u32,
+        cpu_hz: u32,
+        swo_hz: u32,
+    ) -> Result<()> {
         self.read_debug(DCB_DHCSR)?;
         self.write_debug(DCB_DEMCR, DCB_DEMCR_TRCENA)?;
 
         let mut reg = self.read_32(DBGMCU_CR)?;
-        reg |= DBGMCU_CR_DEBUG_TRACE_IOEN | DBGMCU_CR_DEBUG_STOP | DBGMCU_CR_DEBUG_STANDBY | DBGMCU_CR_DEBUG_SLEEP;
+        reg |= DBGMCU_CR_DEBUG_TRACE_IOEN | DBGMCU_CR_DEBUG_STOP | DBGMCU_CR_DEBUG_STANDBY |
+            DBGMCU_CR_DEBUG_SLEEP;
         self.write_32(DBGMCU_CR, reg)?;
         // ST ref man says we set this to 1 even in async mode, it's still "one" pin wide
         self.write_32(TPIU_CSPSR, 1)?; // currently selelct parallel size register ==> 1 bit wide.
@@ -380,7 +438,10 @@ impl<'a> Debugger<'a> {
         self.write_32(TPIU_SPPR, TPIU_SPPR_TXMODE_NRZ)?;
         self.write_32(TPIU_FFCR, 0)?; // Disable tpiu formatting
         self.write_32(ITM_LAR, SCS_LAR_KEY)?;
-        self.write_32(ITM_TCR, ((1<<16) | ITM_TCR_SYNCENA | ITM_TCR_ITMENA))?;
+        self.write_32(
+            ITM_TCR,
+            ((1 << 16) | ITM_TCR_SYNCENA | ITM_TCR_ITMENA),
+        )?;
         self.write_32(ITM_TER, stim_bits)?;
         self.write_32(ITM_TPR, stim_bits)?;
         self.set_dwt_sync_tap(sync_packets)?;
@@ -417,7 +478,7 @@ impl<'a> Debugger<'a> {
                 self.configure(true)?;
                 self.mode()?
             }
-        };        
+        };
         if mode == Mode::Dfu {
             self.exit_dfu_mode()?;
         }
@@ -427,7 +488,7 @@ impl<'a> Debugger<'a> {
 
         if mode != Mode::Debug {
             bail!("Could not enter Debug mode");
-        }  
+        }
 
         self.halt()?;
 
@@ -440,11 +501,11 @@ impl<'a> Debugger<'a> {
         let mut trace_buf = [0u8; 4096];
         let stdout = io::stdout();
         let mut stdout = stdout.lock();
-        loop {            
+        loop {
             let n = self.trace_read(&mut trace_buf)?;
             if n > 0 {
                 let mut r = Reader::new(&trace_buf[..n]);
-                while let Some((port, data)) = r.next() {                    
+                while let Some((port, data)) = r.next() {
                     if port == 0 {
                         stdout.write_all(data)?
                     }
@@ -452,7 +513,7 @@ impl<'a> Debugger<'a> {
                 stdout.flush()?;
             }
             thread::sleep(Duration::from_millis(10));
-        }        
+        }
     }
 }
 
@@ -497,7 +558,7 @@ impl Version {
 
     pub fn pid(&self) -> u16 {
         LittleEndian::read_u16(&self.0[4..6])
-    }   
+    }
 }
 
 pub struct Request {
@@ -510,7 +571,10 @@ impl Request {
         let mut buf = [0u8; 64];
         let arg = a.as_ref();
         &mut buf[..arg.len()].copy_from_slice(arg);
-        Request { buf: buf, len: arg.len() }
+        Request {
+            buf: buf,
+            len: arg.len(),
+        }
     }
 
     pub fn write_u8(mut self, value: u8) -> Self {
@@ -555,7 +619,7 @@ impl Response {
 
     pub fn len(&self) -> usize {
         self.cap - self.pos
-    }    
+    }
 
     pub fn skip(&mut self, n: usize) -> &mut Self {
         self.pos += n;
@@ -579,7 +643,6 @@ impl Response {
         self.pos += 4;
         v
     }
-
 }
 
 impl AsRef<[u8]> for Response {
@@ -596,7 +659,7 @@ impl AsMut<[u8]> for Response {
 }
 
 
-pub struct Reader<'a> { 
+pub struct Reader<'a> {
     buf: &'a [u8],
     pos: usize,
 }
@@ -607,7 +670,9 @@ impl<'a> Reader<'a> {
     }
 
     pub fn next(&mut self) -> Option<(u8, &'a [u8])> {
-        if self.pos >= self.buf.len() { return None }        
+        if self.pos >= self.buf.len() {
+            return None;
+        }
         let len = self.buf.len();
         let pos = self.pos;
         let header = self.buf[pos];
@@ -615,19 +680,25 @@ impl<'a> Reader<'a> {
         match header & 0b111 {
             0b01 => {
                 self.pos += 2;
-                if pos + 2 > len { return None };
-                Some((port, &self.buf[pos+1..pos+2]))
-            },
+                if pos + 2 > len {
+                    return None;
+                };
+                Some((port, &self.buf[pos + 1..pos + 2]))
+            }
             0b10 => {
                 self.pos += 3;
-                if pos + 3 > len { return None };
-                Some((port, &self.buf[pos+1..pos+3]))
-            },
+                if pos + 3 > len {
+                    return None;
+                };
+                Some((port, &self.buf[pos + 1..pos + 3]))
+            }
             0b11 => {
                 self.pos += 5;
-                if pos + 5 > len { return None };
-                Some((port, &self.buf[pos+1..pos+5]))
-            },
+                if pos + 5 > len {
+                    return None;
+                };
+                Some((port, &self.buf[pos + 1..pos + 5]))
+            }
             _ => None,
         }
     }

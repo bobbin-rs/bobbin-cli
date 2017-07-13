@@ -21,8 +21,8 @@ bobbin-cli has the following main areas of functionality:
    loading tool (OpenOCD, JLinkExe, bossac or teensy_cli_loader) to upload the output binary.
 
 -  Testing and Debugging. bobbin-cli can automatically connect to and display the virtual serial
-   console of the selected device if available. You can also start an instance of OpenOCD and gdb with
-   the output binary produced by the build stage.
+   console of the selected device if available. You can also start an instance of OpenOCD and gdb
+   with the output binary produced by the build stage.
 
 If you have only a single debugging device connected to your computer, you should be able to view
 it using \"bobbin list\", which should produce output like this:
@@ -74,7 +74,7 @@ device = \"c2f3dc42\"
 To build and run a Rust embedded application, simply use \"bobbin run\" with optional--target, --bin,
 --example and --release parameters, just as you would use xargo or xargo directly. bobbin-cli will
 use these parameters as well as the local .cargo/config and Cargo.toml file to determine the path of
-the output file. It will then execute the appropriate flash loader application for your device (OpenOCD, 
+the output file. It will then execute the appropriate flash loader application for your device (OpenOCD,
 JLinkExe, bossac or teensy_loader_cli), using objcopy as needed to convert to the required format.
 
 Some devices require manual intervention to enter bootloader mode.
@@ -137,7 +137,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
             .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")            
+                .help("Use make for the build, optionally providing additional parameters")
             )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .about("Load an application onto the selected device after a successful build.")
@@ -151,7 +151,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
             .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")                        
+                .help("Use make for the build, optionally providing additional parameters")
             )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .arg(Arg::with_name("console").long("console").min_values(0).max_values(1)
@@ -172,7 +172,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
             .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")                        
+                .help("Use make for the build, optionally providing additional parameters")
             )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .arg(Arg::with_name("console").long("console").min_values(0).max_values(1)
@@ -183,7 +183,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("itm-target-clock").long("itm-target-clock").min_values(0).max_values(1)
                 .help("Set the ITM Target's Clock Speed"))
             .about("Load and test an application on the selected device after a successful build.")
-        )        
+        )
         .subcommand(SubCommand::with_name("halt").about("Halt the selected device."))
         .subcommand(SubCommand::with_name("resume")
             .arg(Arg::with_name("console").long("console").min_values(0).max_values(1)
@@ -220,7 +220,7 @@ pub fn app() -> App<'static, 'static> {
                 .help("Specify the path to the serial device for the selected device.")
             )
             .about("Connect to the serial port of the selected device using screen.")
-        )        
+        )
         .subcommand(SubCommand::with_name("openocd")
             .about("Start OpenOCD for the selected device")
         )
@@ -233,10 +233,10 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("features").long("features").takes_value(true).takes_value(true).help("Pass a --features parameter to xargo"))
             .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")                        
+                .help("Use make for the build, optionally providing additional parameters")
             )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .about("Start gdb using the build output as the target.")
         )
-        //.subcommand(SubCommand::with_name("objdump"))
+    //.subcommand(SubCommand::with_name("objdump"))
 }

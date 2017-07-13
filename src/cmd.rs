@@ -9,25 +9,30 @@ use loader;
 use debugger;
 use console;
 
-pub fn list(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn list(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter);
 
-    writeln!(out, "{:08} {:04}:{:04} {:24} {:32} {:24}", 
+    writeln!(out, "{:08} {:04}:{:04} {:24} {:32} {:24}",
         "ID",
-        "VID", 
-        "PID", 
-        "Vendor", 
+        "VID",
+        "PID",
+        "Vendor",
         "Product",
         "Serial Number",
-        )?;        
+        )?;
     for d in devices?.iter() {
         let u = d.usb();
         write!(out, "{:08} {:04x}:{:04x} {:24} {:32} {:24}",
             &d.hash()[..8],
-            u.vendor_id, 
-            u.product_id, 
-            u.vendor_string, 
+            u.vendor_id,
+            u.product_id,
+            u.vendor_string,
             u.product_string,
             u.serial_number,
             )?;
@@ -37,29 +42,39 @@ pub fn list(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
 }
 
 
-pub fn info(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn info(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter)?;
 
     for d in devices.iter() {
-        let u = d.usb();        
+        let u = d.usb();
         writeln!(out, "{:16} {}", "ID", d.hash())?;
         writeln!(out, "{:16} {:04x}", "Vendor ID", u.vendor_id)?;
         writeln!(out, "{:16} {:04x}", "Product ID", u.product_id)?;
         writeln!(out, "{:16} {}", "Vendor", u.vendor_string)?;
         writeln!(out, "{:16} {}", "Product", u.product_string)?;
         writeln!(out, "{:16} {}", "Serial Number", u.serial_number)?;
-        writeln!(out, "{:16} {}", "Type", d.device_type().unwrap_or("Unknown"))?;
+        writeln!(
+            out,
+            "{:16} {}",
+            "Type",
+            d.device_type().unwrap_or("Unknown")
+        )?;
         if let Some(loader_type) = d.loader_type() {
             writeln!(out, "{:16} {}", "Loader Type", loader_type)?;
         }
         if let Some(debugger_type) = d.debugger_type() {
             writeln!(out, "{:16} {}", "Debugger Type", debugger_type)?;
-        }        
+        }
 
         if let Some(bossa_path) = d.bossa_path() {
             writeln!(out, "{:16} {}", "Bossac Device", bossa_path)?;
-        }        
+        }
         if let Some(cdc_path) = d.cdc_path() {
             writeln!(out, "{:16} {}", "CDC Device", cdc_path)?;
         }
@@ -74,12 +89,22 @@ pub fn info(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     Ok(())
 }
 
-pub fn build(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn build(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let dst = builder::build(cfg, args, args, out)?;
     Ok(())
 }
 
-pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn load(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -90,9 +115,9 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
     } else {
         devices.remove(0)
     };
-    
+
     let ldr = if let Some(ldr) = device.loader_type() {
-        out.verbose("loader",ldr)?;
+        out.verbose("loader", ldr)?;
         if let Some(ldr) = loader::loader(ldr) {
             ldr
         } else {
@@ -108,7 +133,7 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         bail!("No build output available to load");
     };
     out.verbose("target", &format!("{}", dst.display()))?;
-    
+
     let con = if !cmd_args.is_present("noconsole") && !cmd_args.is_present("itm") {
         if args.is_present("run") || args.is_present("test") {
             if let Some(cdc_path) = device.cdc_path() {
@@ -125,7 +150,14 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
         None
     };
 
-    ldr.load(cfg, args, cmd_args, out, device.as_ref(), dst.as_path())?;
+    ldr.load(
+        cfg,
+        args,
+        cmd_args,
+        out,
+        device.as_ref(),
+        dst.as_path(),
+    )?;
 
     out.info("Loader", "Load Complete")?;
 
@@ -153,13 +185,18 @@ pub fn load(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pr
             con.test(&args, &cmd_args)?;
         } else {
             con.view()?;
-        }        
+        }
     }
 
     Ok(())
 }
 
-pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {    
+pub fn control(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -172,7 +209,7 @@ pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
     };
 
     let dbg = if let Some(dbg) = device.debugger_type() {
-        out.verbose("debugger",dbg)?;
+        out.verbose("debugger", dbg)?;
         if let Some(dbg) = debugger::debugger(dbg) {
             dbg
         } else {
@@ -181,7 +218,7 @@ pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
     } else {
         bail!("Selected device has no associated loader");
     };
-    
+
     if let Some(_) = args.subcommand_matches("halt") {
         dbg.halt(cfg, args, cmd_args, out, device.as_ref())?;
     } else if let Some(_) = args.subcommand_matches("resume") {
@@ -201,7 +238,12 @@ pub fn control(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
     Ok(())
 }
 
-pub fn openocd(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn openocd(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
@@ -214,7 +256,7 @@ pub fn openocd(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
         bail!("More than one device found ({})", devices.len());
     } else {
         devices.remove(0)
-    };    
+    };
 
     let mut cmd = Command::new("openocd");
     cmd.arg("--file").arg("openocd.cfg");
@@ -229,7 +271,12 @@ pub fn openocd(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
     Ok(())
 }
 
-pub fn gdb(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn gdb(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
@@ -240,11 +287,10 @@ pub fn gdb(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pri
     };
 
     let mut cmd = Command::new("arm-none-eabi-gdb");
-    cmd
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .arg(dst);
-    out.verbose("gdb",&format!("{:?}", cmd))?;
+    cmd.stdout(Stdio::inherit()).stderr(Stdio::inherit()).arg(
+        dst,
+    );
+    out.verbose("gdb", &format!("{:?}", cmd))?;
 
     cmd.exec();
 
@@ -255,7 +301,12 @@ pub fn gdb(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pri
     Ok(())
 }
 
-pub fn console(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn console(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -265,7 +316,7 @@ pub fn console(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
         bail!("More than one device found ({})", devices.len());
     } else {
         devices.remove(0)
-    };    
+    };
 
     if let Some(cdc_path) = device.cdc_path() {
         let mut con = console::open(&cdc_path)?;
@@ -273,11 +324,16 @@ pub fn console(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut
     } else {
         bail!("No console found for device");
     }
-    
-    Ok(())    
+
+    Ok(())
 }
 
-pub fn screen(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn screen(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
@@ -290,7 +346,7 @@ pub fn screen(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut 
         bail!("More than one device found ({})", devices.len());
     } else {
         devices.remove(0)
-    };    
+    };
 
     let mut cmd = Command::new("screen");
     if let Some(cdc_path) = device.cdc_path() {
@@ -308,11 +364,21 @@ pub fn screen(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut 
     Ok(())
 }
 
-pub fn objdump(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn objdump(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     Ok(())
 }
 
-pub fn itm(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Printer) -> Result<()> {
+pub fn itm(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -322,7 +388,7 @@ pub fn itm(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches, out: &mut Pri
         bail!("More than one device found ({})", devices.len());
     } else {
         devices.remove(0)
-    };    
+    };
 
     if device.can_trace_itm() {
         out.info("ITM", "Starting ITM Trace")?;

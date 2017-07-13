@@ -3,7 +3,7 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 
 pub fn printer() -> Printer {
-    Printer { 
+    Printer {
         out: StandardStream::stdout(ColorChoice::Always),
         verbose: false,
     }
@@ -31,11 +31,13 @@ impl Printer {
     }
 
     pub fn msg(&mut self, color: Color, label: &str, msg: &str) -> ::std::io::Result<()> {
-        self.out.set_color(ColorSpec::new().set_bold(true).set_fg(Some(color)))?;
+        self.out.set_color(
+            ColorSpec::new().set_bold(true).set_fg(Some(color)),
+        )?;
         write!(self.out, "{:>12}", label)?;
         self.out.reset()?;
-        writeln!(self.out(), " {}", msg)        
-    }    
+        writeln!(self.out(), " {}", msg)
+    }
 
     pub fn verbose(&mut self, label: &str, msg: &str) -> ::std::io::Result<()> {
         if self.verbose {
@@ -44,7 +46,7 @@ impl Printer {
             Ok(())
         }
     }
-    
+
     pub fn info(&mut self, label: &str, msg: &str) -> ::std::io::Result<()> {
         self.msg(Color::Green, label, msg)
     }
