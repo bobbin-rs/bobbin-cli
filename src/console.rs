@@ -49,8 +49,8 @@ impl Console {
     }
 
     pub fn test(&mut self, args: &ArgMatches, cmd_args: &ArgMatches) -> Result<()> {
-        const LINE_TIMEOUT_MS: u64 = 1000;
-        const TEST_TIMEOUT_MS: u64 = 5000;
+        const LINE_TIMEOUT_MS: u64 = 5000;
+        const TEST_TIMEOUT_MS: u64 = 15000;
 
         self.port.set_timeout(Duration::from_millis(100))?;
         let mut buf = [0u8; 1024];

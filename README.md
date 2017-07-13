@@ -23,6 +23,27 @@ bobbin-cli has the following main areas of functionality:
    console of the selected device if available. You can also start an instance of OpenOCD and gdb with
    the output binary produced by the build stage.
 
+
+## Installation
+
+<!--
+To install from cargo:
+
+```
+$ cargo install bobbin-cli
+```
+-->
+
+To install from github:
+
+```
+$ git clone https://github.com/bobbin-rs/bobbin-cli.git
+$ cd bobbin-cli
+$ cargo install bobbin-cli
+```
+
+## Usage
+
 If you have only a single debugging device connected to your computer, you should be able to view
 it using "bobbin list", which should produce output like this:
 
@@ -105,20 +126,32 @@ $ bobbin run --make blinky --binary build/blinky.elf
 
 would execute "make blinky" and then continue on success, using build/blinky.elf as the output binary.
 
-## Installation
+## Tests
 
-<!--
-To install from cargo:
-
-```
-$ cargo install bobbin-cli
-```
--->
-
-To install from github:
+Bobbin has a simple test running using a simple text-based format. An example:
 
 ```
-$ git clone https://github.com/bobbin-rs/bobbin-cli.git
-$ cd bobbin-cli
-$ cargo install bobbin-cli
+$ bobbin test
+   Compiling frdm-k64f v0.1.0 (file:///home/bobbin/bobbin-boards/frdm-k64f)
+    Finished dev [optimized + debuginfo] target(s) in 0.61 secs
+   text	   data	    bss	    dec	    hex	filename
+   6252	    428	    408	   7088	   1bb0	target/thumbv7em-none-eabihf/debug/frdm-k64f
+     Loading target/thumbv7em-none-eabihf/debug/frdm-k64f
+    Complete Successfully flashed device
+      Loader Load Complete
+     Console Opening Console
+[start] Running tests for frdm-k64f
+[pass] 0
+[pass] 1
+[pass] 2
+[pass] 3
+[pass] 4
+[done] All tests passed
 ```
+
+Bobbin will detect the [start], [pass] and [done] tags, exiting with return code 0. It also recognizes
+[fail], [exception], and [panic] tags, which will cause it to exit with return codes 1, 2 or 3. All other
+output is ignored.
+
+The test runner will exit with return code 1 if there is a delay of more than 5 seconds between lines
+or 15 seconds to complete the entire test. In the future these timeouts will be configurable.
