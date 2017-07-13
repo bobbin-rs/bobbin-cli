@@ -2,6 +2,12 @@
 name = "bobbin-cli"
 version = "0.1.0"
 authors = ["Jonathan Soo <jcsoo@agora.com>"]
+description = "A command line tool for automating your embedded development workflow."
+homepage = "https://github.com/bobbin-rs/bobbin-cli/"
+repository = "https://github.com/bobbin-rs/bobbin-cli/"
+readme = "README.md"
+keywords = "embedded"
+license = "MIT/Apache 2.0"
 
 [[bin]]
 name = "bobbin"
