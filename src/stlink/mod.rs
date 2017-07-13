@@ -1,6 +1,5 @@
 mod util;
 mod constants;
-mod chip_ids;
 
 use libusb;
 pub use self::constants::*;
@@ -128,27 +127,6 @@ impl<'a> Debugger<'a> {
         println!("Product:      {}", self.handle.read_product_string(lang, &self.desc, timeout)?);
         println!("Serial #:     {}", self.handle.read_serial_number_string(lang, &self.desc, timeout)?);
         Ok(())
-    }
-
-    pub fn identify_core(&mut self) -> Result<Option<(&'static str, u32)>> {
-        let id = self.core_id()?;
-        for &(label, code) in chip_ids::CORE_IDS.iter() {
-            if id == code {
-                return Ok(Some((label, code)))
-            }
-        }
-        return Ok(None)        
-    }
-
-    pub fn identify_chip(&mut self) -> Result<Option<(&'static str, u16)>> {
-        let id = self.read_32(DBGMCU_IDCODE)?;
-        let chip_id = (id & 0xfff) as u16;
-        for &(label, code) in chip_ids::CHIP_IDS.iter() {
-            if chip_id == code {
-                return Ok(Some((label, code)))
-            }
-        }
-        return Ok(None)
     }
 
     pub fn send(&self, src: &[u8]) -> Result<usize> {
