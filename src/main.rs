@@ -11,7 +11,9 @@ extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
 
+#[cfg(feature="stlink")]
 extern crate byteorder;
+#[cfg(feature="stlink")]
 extern crate libusb;
 
 mod app;
@@ -23,6 +25,8 @@ mod loader;
 mod debugger;
 mod printer;
 mod console;
+
+#[cfg(feature="stlink")]
 mod stlink;
 
 #[cfg(target_os="macos")]
@@ -43,7 +47,7 @@ mod errors {
             PList(::plist::Error);
             Toml(::toml::de::Error);
             Serial(::serial::Error);
-            LibUsb(::libusb::Error);
+            LibUsb(::libusb::Error) #[cfg(feature="stlink")];
         }
     }
 }

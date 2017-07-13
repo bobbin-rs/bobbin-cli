@@ -7,6 +7,9 @@ authors = ["Jonathan Soo <jcsoo@agora.com>"]
 name = "bobbin"
 path = "src/main.rs"
 
+[features]
+stlink = ["libusb", "byteorder"]
+
 [dependencies]
 clap = "2.23"
 error-chain = "0.10"
@@ -16,5 +19,5 @@ serial = "0.3"
 toml = "0.3"
 termcolor = "0.3.2"
 tempfile = "2.1.5"
-byteorder = "1.0"
-libusb = "0.3"
+byteorder = { version = "1.0", optional = true }
+libusb = { version = "0.3", optional = true }

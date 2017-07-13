@@ -9,6 +9,7 @@ use std::fs;
 use std::io::Read;
 use std::fmt::Write;
 use config::Config;
+#[cfg(feature="stlink")]
 use stlink;
 use Result;
 
@@ -155,9 +156,11 @@ impl Device for StLinkV2Device {
         Some(out)
     }    
 
+    #[cfg(feature="stlink")]
     fn can_trace_itm(&self) -> bool { true }
 
     #[allow(unreachable_code)]
+    #[cfg(feature="stlink")]
     fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
       
         let mut ctx = stlink::context()?;
@@ -226,8 +229,10 @@ impl Device for StLinkV21Device {
         Some(format!("hla_serial {}", self.usb.serial_number))
     }        
 
+    #[cfg(feature="stlink")]
     fn can_trace_itm(&self) -> bool { true }
 
+    #[cfg(feature="stlink")]
     #[allow(unreachable_code)]
     fn trace_itm(&self, target_clk: u32, trace_clk: u32) -> Result<()> {
         let mut ctx = stlink::context()?;
