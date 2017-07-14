@@ -26,6 +26,8 @@ bobbin-cli has the following main areas of functionality:
 
 ## Installation
 
+*Note:* Only Linux and macOS are supported at this time.
+
 <!--
 To install from cargo:
 
