@@ -23,10 +23,73 @@ bobbin-cli has the following main areas of functionality:
    console of the selected device if available. You can also start an instance of OpenOCD and gdb with
    the output binary produced by the build stage.
 
+## Supported Devices
+
+*Note:* Only Linux and macOS hosts are supported at this time.
+
+### Debug Probes
+
+Currently Supported:
+
+- [ST-Link/V2](http://www.st.com/en/development-tools/st-link-v2.html) - V2 and V2.1 devices supported,
+including CDC (virtual serial port) and SWV Trace (optional, requires libusb).
+- [CMSIS-DAP](https://developer.mbed.org/handbook/CMSIS-DAP) - including CDC (virtual serial port) support.
+- [DAPLINK](https://github.com/mbedmicro/DAPLink) - including MSD (mass storage device) and CDC (virtual serial port) support.
+- [TI ICDI](http://www.ti.com/tool/stellaris_icdi_drivers) - including CDC (virtual serial port) support.
+- [J-Link](https://www.segger.com/products/debug-probes/j-link/) - including CDC (virtual serial port) support.
+
+Coming Soon:
+
+- [Black Magic Probe](https://github.com/blacksphere/blackmagic)
+
+Not Supported:
+
+- [PEmicro](http://www.pemicro.com/opensda/)
+
+### Development Boards with Embedded Debug Probes
+
+Boards from the following product families include embedded debug probes that should be supported.
+
+- [STM32 Discovery](http://www.st.com/en/evaluation-tools/stm32-mcu-discovery-kits.html?querycriteria=productId=LN1848) 
+- [STM32 Nucleo](http://www.st.com/en/evaluation-tools/stm32-mcu-nucleo.html?querycriteria=productId=LN1847)
+- [Freescale FRDM](http://www.nxp.com/products/software-and-tools/hardware-development-tools/freedom-development-boards:FREDEVPLA)
+- [TI Launchpad](http://www.ti.com/lsds/ti/tools-software/launchpads/overview/overview.page)
+- [NXP S32K144EVB](http://www.nxp.com/products/automotive-products/microcontrollers-and-processors/arm-mcus-and-mpus/s32-processors-microcontrollers/s32k144-evaluation-board:S32K144EVB)
+- [Arduino Zero](https://www.arduino.cc/en/Guide/ArduinoZero)
+
+*Note:* Many development boards support OpenSDA, which allows a choice of firmware to be installed. Debug probes may support
+CMSIS-DAP, DAPLINK, J-Link and PEMicro firmware variants. Be sure to upgrade to the most recent firmware available, and ensure that
+a variant supporting OpenOCD (CMSIS-DAP/DAPLINK) or J-Link is installed.
+
+### Development Boards with Flash Loader Support
+
+Boards from the following product families use flash loaders that are supported.
+
+- [Feather M0](https://www.adafruit.com/feather)
+- [Teensy 3.x and LC](https://www.pjrc.com/teensy/)
+
+## Prerequisites
+
+### Build Tools
+
+These tools must be installed in your PATH.
+
+- [GNU ARM Embedded](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm)
+- [xargo](https://github.com/japaric/xargo)
+
+### Debugger / Loader Tools
+
+You must have the appropriate tools installed for the debug probes / dev boards that you wish to use.
+
+- [OpenOCD](http://openocd.org) - required for STLink, DAPLINK, CMSIS-DAP, and TI ICDI debug probes
+- [J-Link](https://www.segger.com/downloads/jlink) - required for J-Link debug probes.
+- [Bossa](http://www.shumatech.com/web/products/bossa) - required for Arduino and Feather devices
+- [Teensy Loader](https://www.pjrc.com/teensy/loader_cli.html) - required for Teensy devices
+- [libusb](http://libusb.info) - required for STLink SWV Trace support.
 
 ## Installation
 
-*Note:* Only Linux and macOS are supported at this time.
+*Note:* Only Linux and macOS hosts are supported at this time.
 
 <!--
 To install from cargo:
@@ -42,6 +105,13 @@ To install from github:
 $ git clone https://github.com/bobbin-rs/bobbin-cli.git
 $ cd bobbin-cli
 $ cargo install bobbin-cli
+```
+
+To install with ST-Link SWV Trace support:
+
+
+```
+$ cargo install bobbin-cli --features stlink
 ```
 
 ## Usage
@@ -69,6 +139,9 @@ cb46720d 1cbe:00fd Texas Instruments        In-Circuit Debug Interface       0F0
 f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
 c2f3dc42 0483:374b STMicroelectronics       STM32 STLink                     0670FF484957847167071621
 ```
+
+The device ID is a hash of the USB Vendor ID, USB Product ID, and USB Serial Number (if available). "bobbin list" displays
+the first eight hex digits of the device ID, and "bobbin info" displays the full 64 bit ID.
 
 Most subcommands will take a global parameter "-d" to specify a specific device ID from the first column. You
 may use a unique prefix of the ID - for instance 4c01 instead of 4c01a4ad.
@@ -157,3 +230,95 @@ output is ignored.
 
 The test runner will exit with return code 1 if there is a delay of more than 5 seconds between lines
 or 15 seconds to complete the entire test. In the future these timeouts will be configurable.
+
+## Configuration
+
+### OpenOCD
+
+When using a debug probe / development board that uses OpenCD, you must have an openocd.cfg file in your
+project directory that provides the correct configuration for the debugger and device being used.
+
+For instance, for the FRDM-K64F:
+
+```
+$ cat openocd.cfg
+source [find interface/cmsis-dap.cfg]
+source [find target/kx.cfg]
+kx.cpu configure -event gdb-attach { reset init }
+```
+
+You should be able to run "openocd" and have it successfully connect to the device, assuming you only have
+a single debug probe of that type connected:
+
+```
+$ openocd
+Open On-Chip Debugger 0.10.0+dev-00092-g77189db (2017-03-01-20:42)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "swd". To override use 'transport select <transport>'.
+Info : add flash_bank kinetis kx.flash
+adapter speed: 1000 kHz
+none separate
+cortex_m reset_config sysresetreq
+Info : CMSIS-DAP: SWD  Supported
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : CMSIS-DAP: FW Version = 1.0
+Info : SWCLK/TCK = 0 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : clock speed 1000 kHz
+Info : SWD DPIDR 0x2ba01477
+Info : MDM: Chip is unsecured. Continuing.
+Info : kx.cpu: hardware has 6 breakpoints, 4 watchpoints
+^C
+$
+```
+
+Bobbin will invoke OpenOCD with additional command line parameters specifying the USB serial number
+of the device to open.
+
+### Selecting a specfic device
+
+If you have multiple debug probes connected, you can tell Bobbin which device to use on a per-directory basis.
+Bobbin will look for a TOML configuration file in the .bobbin directory (.bobbin/config).
+
+To select a specific device, create a [filter] section with a "device" key that includes the prefix of the
+device id. For instance,
+
+```
+$ bobbin list
+ID       VID :PID  Vendor                   Product                          Serial Number
+f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
+8c6bbec5 0d28:0204 ARM                      DAPLink CMSIS-DAP                0260000025414e450049501247e0004e30f1000097969900
+cb46720d 1cbe:00fd Texas Instruments        In-Circuit Debug Interface       0F007E1A
+
+$ mkdir .bobbin
+$ cat > test
+[filter]
+device = "f95f4aca"
+$ bobbin list
+ID       VID :PID  Vendor                   Product                          Serial Number
+f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
+```
+
+### Specifying Teensy Loader MCU
+
+teensy_loader_cli requires an additional command line parameter --mcu=&lt;MCU&gt; that tells it the exact MCU being used. You
+will need to add the appropiate MCU key to the [loader] section of your .bobbin/config:
+
+```
+[loader]
+mcu = "mk20dx256" # Teensy 3.2
+```
+```
+[loader]
+mcu = "mk64fx512" # Teensy 3.5
+```
+```
+[loader]
+mcu = "mk66fx1m0" # Teensy 3.6
+```
+```
+[loader]
+mcu = "mkl26z64" # Teensy LC
+```
