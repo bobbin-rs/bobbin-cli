@@ -104,15 +104,34 @@ To install from github:
 ```
 $ git clone https://github.com/bobbin-rs/bobbin-cli.git
 $ cd bobbin-cli
-$ cargo install bobbin-cli
+$ cargo install
 ```
 
 To install with ST-Link SWV Trace support:
 
 
 ```
-$ cargo install bobbin-cli --features stlink
+$ cargo install --features stlink
 ```
+
+## Checking Dependencies
+
+Use "bobbin check" to list the version numbers of all Bobbin dependencies. "Not Found" will be displayed if
+the dependency is not available.
+
+```
+$ bobbin check
+      Rust 1.20.0-nightly (086eaa78e 2017-07-15)
+     Cargo 0.21.0-nightly (f709c35a3 2017-07-13)
+     Xargo 0.3.5
+       GCC 5.4.1 20160919 (release) [ARM/embedded-5-branch revision 240496]
+   OpenOCD 0.10.0+dev-g7c2dc13 (2017-02-12-10:20)
+     JLink V6.15c (Compiled Apr 24 2017 19:07:08)
+     Bossa 1.7.0
+    Teensy 2.1
+```
+
+Please include the "bobbin check" output when reporting problems.
 
 ## Usage
 

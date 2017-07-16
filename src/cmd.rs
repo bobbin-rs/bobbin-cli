@@ -8,6 +8,24 @@ use builder;
 use loader;
 use debugger;
 use console;
+use check;
+
+pub fn check(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
+    writeln!(out, "      Rust {}", check::rust_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "     Cargo {}", check::cargo_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "     Xargo {}", check::xargo_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "       GCC {}", check::gcc_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "   OpenOCD {}", check::openocd_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "     JLink {}", check::jlink_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "     Bossa {}", check::bossac_version().unwrap_or(String::from("Not Found")))?;    
+    writeln!(out, "    Teensy {}", check::teensy_version().unwrap_or(String::from("Not Found")))?;
+    Ok(())
+}
 
 pub fn list(
     cfg: &Config,

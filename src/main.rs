@@ -10,6 +10,7 @@ extern crate plist;
 extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
+extern crate regex;
 
 #[cfg(feature = "stlink")]
 extern crate byteorder;
@@ -25,6 +26,7 @@ mod loader;
 mod debugger;
 mod printer;
 mod console;
+mod check;
 
 #[cfg(feature = "stlink")]
 mod stlink;
@@ -79,7 +81,9 @@ fn run() -> Result<()> {
     let cfg = config::config(&args)?;
     let mut out = printer::printer().with_verbose(args.is_present("verbose"));
 
-    if let Some(cmd_args) = args.subcommand_matches("list") {
+    if let Some(cmd_args) = args.subcommand_matches("check") {
+        cmd::check(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("list") {
         cmd::list(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("info") {
         cmd::info(&cfg, &args, cmd_args, &mut out)
