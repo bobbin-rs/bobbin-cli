@@ -5,6 +5,7 @@ use device::Device;
 
 use std::process::Command;
 use std::io::Write;
+use std::path::Path;
 
 use tempfile;
 use Result;
@@ -80,6 +81,10 @@ impl OpenOcdDebugger {
         device: &Device,
         action: &str,
     ) -> Result<()> {
+        if !Path::new("openocd.cfg").exists() {
+            bail!("No openocd.cfg found in current directory");
+        }
+
         let mut cmd = Command::new("openocd");
         cmd.arg("--file").arg("openocd.cfg");
         cmd.arg("--command").arg(&device.openocd_serial().unwrap());
