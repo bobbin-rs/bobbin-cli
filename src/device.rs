@@ -588,6 +588,8 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
         (0x0483, 0xdf11) => Box::new(Stm32Device { usb: usb }),
         (0x1d50, 0x6018) => Box::new(BlackMagicDevice { usb: usb }),
+        // Vendor Prefix Only
+        (0x1366, _) => Box::new(JLinkDevice { usb: usb }),        
         _ => Box::new(UnknownDevice { usb: usb }),
     }
 }
