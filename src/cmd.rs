@@ -293,6 +293,60 @@ pub fn openocd(
     Ok(())
 }
 
+
+pub fn jlink_gdb_server(
+    cfg: &Config,
+    args: &ArgMatches,
+    cmd_args: &ArgMatches,
+    out: &mut Printer,
+) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };
+
+    let jlink_dev = if let Some(default_loader) = cfg.default_loader() {
+        if let Some(ldr_cfg) = default_loader.as_table() {
+            if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
+                mcu
+            } else {
+                bail!("JLink Loader requires that jlink_device is specified");
+            }
+        } else {
+            bail!("JLink Loader requires that jlink_device is specified");
+        }
+    } else {
+        bail!("JLink Loader requires that jlink_device is specified");
+    };    
+
+    let mut cmd = Command::new("JLinkGDBServer");
+    cmd.arg("-device").arg(jlink_dev);
+    cmd.arg("-if").arg("SWD");
+    cmd.arg("-autoconnect").arg("1");
+    cmd.arg("-speed").arg("4000");
+    cmd.arg("-SelectEmuBySN").arg(
+        device.usb().serial_number.clone(),
+    );
+
+    cmd.exec();
+
+    let status = cmd.status()?;
+    if !status.success() {
+        bail!("openocd failed")
+    }
+    Ok(())
+}
+
+
 pub fn gdb(
     cfg: &Config,
     args: &ArgMatches,
