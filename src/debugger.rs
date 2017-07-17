@@ -14,6 +14,7 @@ pub fn debugger(debugger_type: &str) -> Option<Box<Control>> {
     match debugger_type.to_lowercase().as_ref() {
         "openocd" => Some(Box::new(OpenOcdDebugger {})),
         "jlink" => Some(Box::new(JLinkDebugger {})),
+        "blackmagic" => Some(Box::new(BlackMagicDebugger {})),
         _ => None,
     }
 }
@@ -288,5 +289,104 @@ impl Control for JLinkDebugger {
     ) -> Result<()> {
         bail!("reset init is not supported for this debugger")
         //self.command(cfg, args, cmd_args, out, device, "r")
+    }
+}
+
+pub struct BlackMagicDebugger {}
+impl BlackMagicDebugger {
+    fn command(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+        action: &str,
+    ) -> Result<()> {
+        let mut cmd = Command::new("arm-none-eabi-gdb");
+        if let Some(gdb_path) = device.gdb_path() {
+            cmd.arg("-ex").arg("set confirm off");
+            cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
+            // These commands are BlackMagic Probe Specific
+            cmd.arg("-ex").arg("monitor jtag_scan");
+            cmd.arg("-ex").arg("attach 1");
+        }
+        cmd.arg("-ex").arg(action);
+        cmd.arg("-ex").arg("quit");
+        out.verbose("blackmagic", &format!("{:?}", cmd))?;
+
+        if out.is_verbose() {
+            cmd.status()?;
+        } else {
+            cmd.output()?;
+        }
+        Ok(())
+    }
+}
+
+impl Control for BlackMagicDebugger {
+    fn halt(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        // self.command(cfg, args, cmd_args, out, device, "interrupt")
+        bail!("halt is not supported for this debugger")
+    }
+    fn resume(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        // self.command(cfg, args, cmd_args, out, device, "c&")
+        bail!("resume is not supported for this debugger")
+    }
+    fn reset(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        self.command(cfg, args, cmd_args, out, device, "kill")
+    }
+    fn reset_halt(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        // self.command(cfg, args, cmd_args, out, device, "start")
+        bail!("reset halt is not supported for this debugger")
+    }
+    fn reset_run(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        self.command(cfg, args, cmd_args, out, device, "kill")
+    }
+    fn reset_init(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        // self.command(cfg, args, cmd_args, out, device, "")
+        bail!("reset init is not supported for this debugger")
     }
 }

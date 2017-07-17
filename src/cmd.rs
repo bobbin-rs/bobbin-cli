@@ -100,6 +100,9 @@ pub fn info(
         if let Some(msd_path) = d.msd_path() {
             writeln!(out, "{:16} {}", "MSD Device", msd_path.display())?;
         }
+        if let Some(gdb_path) = d.gdb_path() {
+            writeln!(out, "{:16} {}", "GDB Device", gdb_path)?;
+        }        
         if let Some(openocd_serial) = d.openocd_serial() {
             writeln!(out, "{:16} {}", "OpenOCD Serial", openocd_serial)?;
         }
@@ -299,6 +302,17 @@ pub fn gdb(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
+    let filter = device::filter(cfg, args, cmd_args);
+    let mut devices = device::search(&filter)?;
+
+    let device = if devices.len() == 0 {
+        bail!("No matching devices found.");
+    } else if devices.len() > 1 {
+        bail!("More than one device found ({})", devices.len());
+    } else {
+        devices.remove(0)
+    };
+
     let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
     } else {
@@ -306,6 +320,12 @@ pub fn gdb(
     };
 
     let mut cmd = Command::new("arm-none-eabi-gdb");
+    if let Some(gdb_path) = device.gdb_path() {
+        cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
+        // These commands are BlackMagic Probe Specific
+        cmd.arg("-ex").arg("monitor jtag_scan");
+        cmd.arg("-ex").arg("attach 1");
+    }
     cmd.stdout(Stdio::inherit()).stderr(Stdio::inherit()).arg(
         dst,
     );

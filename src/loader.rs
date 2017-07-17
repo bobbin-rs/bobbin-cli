@@ -28,6 +28,7 @@ pub fn loader(loader_type: &str) -> Option<Box<Load>> {
         "bossa" => Some(Box::new(BossaLoader {})),
         "teensy" => Some(Box::new(TeensyLoader {})),
         "dfu-util" => Some(Box::new(DfuUtilLoader {})),
+        "blackmagic" => Some(Box::new(BlackMagicLoader {})),
         _ => None,
     }
 }
@@ -295,6 +296,54 @@ impl Load for DfuUtilLoader {
         cmd.arg("-s").arg("0x08000000");
         cmd.arg("-D").arg(dst);
 
+        let status = if out.is_verbose() {
+            cmd.status()?
+        } else {
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info(
+                "Complete",
+                &format!("Successfully flashed device"),
+            )?;
+        } else {
+            bail!("Error flashing device");
+        }
+        Ok(())
+    }
+}
+
+pub struct BlackMagicLoader {}
+impl Load for BlackMagicLoader {
+    fn load(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+        target: &Path,
+    ) -> Result<()> {
+
+
+        out.info("Loading", &format!("{}", target.display()))?;
+
+        let mut cmd = Command::new("arm-none-eabi-gdb");
+        if let Some(gdb_path) = device.gdb_path() {
+            cmd.arg("-ex").arg("set confirm off");
+            cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
+            // These commands are BlackMagic Probe Specific
+            cmd.arg("-ex").arg("monitor jtag_scan");
+            cmd.arg("-ex").arg("attach 1");
+            cmd.arg("-ex").arg("load");
+            cmd.arg("-ex").arg("kill");
+            cmd.arg("-ex").arg("quit 0");
+        }        
+        cmd.arg(target);
+        if out.is_verbose() {
+            println!("{:?}", cmd);
+        }
         let status = if out.is_verbose() {
             cmd.status()?
         } else {

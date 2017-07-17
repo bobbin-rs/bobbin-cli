@@ -60,6 +60,9 @@ pub trait Device {
     fn bossa_path(&self) -> Option<String> {
         None
     }
+    fn gdb_path(&self) -> Option<String> {
+        None
+    }    
 
     fn jlink_supported(&self) -> bool {
         self.device_type() == Some("JLink")
@@ -495,6 +498,37 @@ impl Device for Stm32Device {
     }
 }
 
+pub struct BlackMagicDevice {
+    usb: UsbDevice,
+}
+
+impl Device for BlackMagicDevice {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("BlackMagicProbe")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("blackmagic")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("blackmagic")
+    }
+
+    fn cdc_path(&self) -> Option<String> {
+        let serial_len = self.usb.serial_number.len();
+        Some(format!("/dev/cu.usbmodem{}3", &self.usb.serial_number[..serial_len  - 1]))
+    }    
+
+    fn gdb_path(&self) -> Option<String> {
+        let serial_len = self.usb.serial_number.len();
+        Some(format!("/dev/cu.usbmodem{}1", &self.usb.serial_number[..serial_len  - 1]))
+    }        
+}
 
 pub struct DeviceFilter {
     all: bool,
@@ -553,6 +587,7 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
         (0x0483, 0xdf11) => Box::new(Stm32Device { usb: usb }),
+        (0x1d50, 0x6018) => Box::new(BlackMagicDevice { usb: usb }),
         _ => Box::new(UnknownDevice { usb: usb }),
     }
 }
