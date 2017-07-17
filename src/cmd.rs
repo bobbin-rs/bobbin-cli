@@ -24,6 +24,7 @@ pub fn check(
     writeln!(out, "     JLink {}", check::jlink_version().unwrap_or(String::from("Not Found")))?;
     writeln!(out, "     Bossa {}", check::bossac_version().unwrap_or(String::from("Not Found")))?;    
     writeln!(out, "    Teensy {}", check::teensy_version().unwrap_or(String::from("Not Found")))?;
+    writeln!(out, "  dfu-util {}", check::dfu_util_version().unwrap_or(String::from("Not Found")))?;
     Ok(())
 }
 

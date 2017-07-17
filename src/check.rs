@@ -130,3 +130,15 @@ pub fn teensy_version() -> Result<String, Error> {
         Err(Error::Regex)
     }
 }
+
+pub fn dfu_util_version() -> Result<String, Error> {
+    let out = Command::new("dfu-util")
+        .arg("-V")
+        .output()?;
+    let re = Regex::new(r"dfu-util (.*)\n").unwrap();
+    if let Some(caps) = re.captures(&out.stdout) {
+        Ok(String::from_utf8_lossy(&caps[1]).into_owned())
+    } else {
+        Err(Error::Regex)
+    }
+}

@@ -27,6 +27,7 @@ pub fn loader(loader_type: &str) -> Option<Box<Load>> {
         "jlink" => Some(Box::new(JLinkLoader {})),
         "bossa" => Some(Box::new(BossaLoader {})),
         "teensy" => Some(Box::new(TeensyLoader {})),
+        "dfu-util" => Some(Box::new(DfuUtilLoader {})),
         _ => None,
     }
 }
@@ -249,6 +250,50 @@ impl Load for TeensyLoader {
         cmd.arg(&format!("--mcu={}", mcu));
         cmd.arg("-v");
         cmd.arg(dst);
+
+        let status = if out.is_verbose() {
+            cmd.status()?
+        } else {
+            cmd.output()?.status
+        };
+
+        if status.success() {
+            out.info(
+                "Complete",
+                &format!("Successfully flashed device"),
+            )?;
+        } else {
+            bail!("Error flashing device");
+        }
+        Ok(())
+    }
+}
+
+pub struct DfuUtilLoader {}
+
+impl Load for DfuUtilLoader {
+    fn load(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+        target: &Path,
+    ) -> Result<()> {
+        let mut dst = PathBuf::from(target);
+        dst.set_extension("bin");
+        objcopy("binary", target, &dst)?;
+
+        // Execute Command
+
+        out.info("Loading", &format!("{}", dst.display()))?;
+
+        let mut cmd = Command::new("dfu-util");
+        cmd.arg("-d").arg(format!("{:04x}:{:04x}", device.usb().vendor_id, device.usb().product_id));
+        cmd.arg("-a").arg("0");
+        cmd.arg("-s").arg("0x08000000");
+        cmd.arg("-D").arg(dst);
 
         let status = if out.is_verbose() {
             cmd.status()?

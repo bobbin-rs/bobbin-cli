@@ -477,6 +477,24 @@ impl Device for TeensyDevice {
     }
 }
 
+pub struct Stm32Device {
+    usb: UsbDevice,
+}
+
+impl Device for Stm32Device {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("STM32")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("dfu-util")
+    }
+}
+
 
 pub struct DeviceFilter {
     all: bool,
@@ -534,6 +552,7 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x239a, 0x000b) => Box::new(FeatherDevice { usb: usb }),
         (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
+        (0x0483, 0xdf11) => Box::new(Stm32Device { usb: usb }),
         _ => Box::new(UnknownDevice { usb: usb }),
     }
 }
