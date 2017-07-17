@@ -195,6 +195,21 @@ impl JLinkDebugger {
         device: &Device,
         action: &str,
     ) -> Result<()> {
+
+        let jlink_dev = if let Some(default_loader) = cfg.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
+                    mcu
+                } else {
+                    bail!("JLink Loader requires that jlink_device is specified");
+                }
+            } else {
+                bail!("JLink Loader requires that jlink_device is specified");
+            }
+        } else {
+            bail!("JLink Loader requires that jlink_device is specified");
+        };
+
         // Generate Script File
         let mut tmpfile: tempfile::NamedTempFile = tempfile::NamedTempFile::new().unwrap();
         try!(writeln!(tmpfile, "{}", action));
@@ -203,8 +218,7 @@ impl JLinkDebugger {
         // Execute Command
 
         let mut cmd = Command::new("JLinkExe");
-        // Allow setting these parameters from the command line and config
-        cmd.arg("-device").arg("S32K144");
+        cmd.arg("-device").arg(jlink_dev);
         cmd.arg("-if").arg("SWD");
         cmd.arg("-autoconnect").arg("1");
         cmd.arg("-speed").arg("4000");
