@@ -23,15 +23,23 @@ pub struct Config {
 
 impl Config {
     pub fn default_target(&self) -> Option<PathBuf> {
-        self.cargo_cfg["build"].as_table().unwrap()["target"]
-            .as_str()
-            .map(PathBuf::from)
+        if let Some(build) = self.cargo_cfg.get("build") {
+            build.as_table().unwrap()["target"]
+                .as_str()
+                .map(PathBuf::from)
+        } else {
+            None
+        }
     }
 
     pub fn default_binary(&self) -> Option<PathBuf> {
-        self.cargo["package"].as_table().unwrap()["name"]
-            .as_str()
-            .map(PathBuf::from)
+        if let Some(package) = self.cargo.get("package") {
+            package.as_table().unwrap()["name"]
+                .as_str()
+                .map(PathBuf::from)
+        } else {
+            None
+        }
     }
 
     pub fn default_filter(&self) -> Option<&Value> {
