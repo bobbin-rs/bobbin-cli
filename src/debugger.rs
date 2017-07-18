@@ -19,7 +19,7 @@ pub fn debugger(debugger_type: &str) -> Option<Box<Control>> {
     }
 }
 
-pub trait Control {
+pub trait Control {    
     fn halt(
         &self,
         cfg: &Config,
@@ -186,6 +186,22 @@ impl Control for OpenOcdDebugger {
 
 pub struct JLinkDebugger {}
 impl JLinkDebugger {
+    fn jlink_device<'a>(&self, cfg: &'a Config) -> Option<&'a str> {
+        if let Some(default_loader) = cfg.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(jlink_device) = ldr_cfg.get("jlink_device") {
+                    jlink_device.as_str()
+                } else {
+                    None
+                }   
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     fn command(
         &self,
         cfg: &Config,
@@ -196,20 +212,8 @@ impl JLinkDebugger {
         action: &str,
     ) -> Result<()> {
 
-        let jlink_dev = if let Some(default_loader) = cfg.default_loader() {
-            if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(jlink_device) = ldr_cfg.get("jlink_device") {
-                    if let Some(mcu) = jlink_device.as_str() {
-                        mcu
-                    } else {
-                        bail!("JLink Loader requires that jlink_device is specified");
-                    }
-                } else {
-                    bail!("JLink Loader requires that jlink_device is specified");
-                }
-            } else {
-                bail!("JLink Loader requires that jlink_device is specified");
-            }
+        let jlink_dev = if let Some(jlink_dev) = self.jlink_device(cfg) {
+            jlink_dev
         } else {
             bail!("JLink Loader requires that jlink_device is specified");
         };
