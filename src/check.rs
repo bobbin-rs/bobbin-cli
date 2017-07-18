@@ -77,7 +77,7 @@ pub fn openocd_version() -> Result<String, Error> {
 pub fn gcc_version() -> Result<String, Error> {
     let out = Command::new("arm-none-eabi-gcc").arg("--version").output()?;
     if out.status.success() {
-        let re = Regex::new(r"arm-none-eabi-gcc \(GNU Tools for ARM Embedded Processors\) (.*)").unwrap();
+        let re = Regex::new(r"arm-none-eabi-gcc \(GNU Tools for ARM Embedded Processors[^\)]+\) (.*)").unwrap();
         if let Some(caps) = re.captures(&out.stdout) {
             Ok(String::from_utf8_lossy(&caps[1]).into_owned())
         } else {
