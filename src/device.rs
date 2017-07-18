@@ -530,6 +530,51 @@ impl Device for BlackMagicDevice {
     }        
 }
 
+pub struct Xds110Device {
+    usb: UsbDevice,
+}
+
+impl Device for Xds110Device {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("XDS110")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    #[cfg(target_os = "macos")]
+    fn cdc_path(&self) -> Option<String> {
+        Some(format!(
+            "/dev/cu.usbmodem{}{}",
+            &self.usb.serial_number[..7],
+            4
+        ))
+    }
+
+    #[cfg(target_os = "linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.0")
+        } else {
+            None
+        }
+    }
+
+    fn openocd_serial(&self) -> Option<String> {
+        Some(format!("hla_serial {}", self.usb.serial_number))
+    }
+}
+
+
 pub struct DeviceFilter {
     all: bool,
     device: Option<String>,
@@ -582,6 +627,7 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x1366, 0x0101) => Box::new(JLinkDevice { usb: usb }),
         (0x1366, 0x0105) => Box::new(JLinkDevice { usb: usb }),
         (0x1cbe, 0x00fd) => Box::new(TiIcdiDevice { usb: usb }),
+        (0x0451, 0xbef3) => Box::new(Xds110Device { usb: usb }),
         (0x239a, 0x800b) => Box::new(FeatherDevice { usb: usb }),
         (0x239a, 0x000b) => Box::new(FeatherDevice { usb: usb }),
         (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
