@@ -519,15 +519,35 @@ impl Device for BlackMagicDevice {
         Some("blackmagic")
     }
 
+    #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
         let serial_len = self.usb.serial_number.len();
         Some(format!("/dev/cu.usbmodem{}3", &self.usb.serial_number[..serial_len  - 1]))
     }    
 
+    #[cfg(target_os = "linux")]
+    fn cdc_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.2")
+        } else {
+            None
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
     fn gdb_path(&self) -> Option<String> {
         let serial_len = self.usb.serial_number.len();
         Some(format!("/dev/cu.usbmodem{}1", &self.usb.serial_number[..serial_len  - 1]))
     }        
+
+    #[cfg(target_os = "linux")]
+    fn gdb_path(&self) -> Option<String> {
+        if let Some(ref path) = self.usb().path {
+            sysfs::cdc_path(path, "1.0")
+        } else {
+            None
+        }
+    }
 }
 
 pub struct Xds110Device {
