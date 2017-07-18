@@ -659,7 +659,7 @@ pub fn search(filter: &DeviceFilter) -> Result<Vec<Box<Device>>> {
                 }
 
                 if let Some(ref device) = filter.device {
-                    if !d.hash().starts_with(device) {
+                    if !filter.all && !d.hash().starts_with(device) {
                         return false;
                     }
                 }
