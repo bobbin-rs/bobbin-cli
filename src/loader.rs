@@ -216,33 +216,18 @@ impl Load for TeensyLoader {
 
         // Execute Command
 
-        let mcu = if let Some(default_loader) = cfg.default_loader() {
-            if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(mcu) = ldr_cfg["mcu"].as_str() {
-                    mcu
-                } else {
-                    bail!(
-                        "Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config"
-                    );
-                }
-            } else {
-                bail!(
-                    "Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config"
-                );
-            }
+        let teensy_mcu = if let Some(teensy_mcu) = cmd_args.value_of("teensy-mcu") {
+            teensy_mcu
+        } else if let Some(teensy_mcu) = cfg.teensy_mcu() {
+            teensy_mcu
         } else {
-            bail!(
-                "Teensy Loader requires that a MCU is specified in the [loader] section of .bobbin/config"
-            );
+            bail!("Teensy Loader requires that --teensy-mcu is specified. Try 'teensy_loader_cli --list-mcus'.");
         };
-
-
-        //let mcu = "mk20dx256";
 
         out.info("Loading", &format!("{}", dst.display()))?;
 
         let mut cmd = Command::new("teensy_loader_cli");
-        cmd.arg(&format!("--mcu={}", mcu));
+        cmd.arg(&format!("--mcu={}", teensy_mcu));
         cmd.arg("-v");
         cmd.arg(dst);
 
