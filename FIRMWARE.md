@@ -102,7 +102,7 @@ DAPLINK is supported by OpenOCD using the CMSIS-DAP protocol.
 
 ### J-Link
 
-[J-Link](https://www.segger.com/products/debug-probes/j-link/) is an extremely popular propietary debug
+[J-Link](https://www.segger.com/products/debug-probes/j-link/) is a popular proprietary debug
 application that runs on J-Link standalone debug probes as well as a wide variety of development boards.
 Segger provides downloadable firmware that can be installed on OpenSDA boards, LPC-Link2 boards and even
 ST-Link development boards. Depending on the specific version, virtual serial ports and USB mass storage
