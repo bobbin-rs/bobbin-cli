@@ -73,6 +73,22 @@ impl Config {
             None
         }
     }
+
+    pub fn jlink_device(&self) -> Option<&str> {
+        if let Some(default_loader) = self.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(jlink_device) = ldr_cfg.get("jlink-device") {
+                    jlink_device.as_str()
+                } else {
+                    None
+                }   
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }    
 }
 
 pub fn read_cargo_config() -> Result<Value> {

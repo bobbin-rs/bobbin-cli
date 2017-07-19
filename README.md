@@ -41,9 +41,6 @@ including CDC (virtual serial port) and SWV Trace (optional, requires libusb).
 Coming Soon:
 
 - [Black Magic Probe](https://github.com/blacksphere/blackmagic)
-
-Not Supported:
-
 - [PEmicro](http://www.pemicro.com/opensda/)
 
 ### Development Boards with Embedded Debug Probes
