@@ -23,6 +23,9 @@ bobbin-cli has the following main areas of functionality:
    console of the selected device if available. You can also start an instance of OpenOCD and gdb with
    the output binary produced by the build stage.
 
+For a collection of LED blinking demo firmware for a wide variety of popular development boards,
+(useful for verifying that your toolchain works) see [bobbin-blinky](https://github.com/bobbin-rs/bobbin-blinky/)
+
 ## Supported Host Platforms
 
 MacOS and Linux are currently supported, Windows support is planned.
