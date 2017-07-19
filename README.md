@@ -23,24 +23,27 @@ bobbin-cli has the following main areas of functionality:
    console of the selected device if available. You can also start an instance of OpenOCD and gdb with
    the output binary produced by the build stage.
 
+## Supported Host Platforms
+
+MacOS and Linux are currently supported, Windows support is planned.
+
 ## Supported Devices
 
-*Note:* Only Linux and macOS hosts are supported at this time.
 
 ### Debug Probes
 
 Currently Supported:
 
+- [J-Link](https://www.segger.com/products/debug-probes/j-link/) - including CDC (virtual serial port) support.
 - [ST-Link/V2](http://www.st.com/en/development-tools/st-link-v2.html) - V2 and V2.1 devices supported,
 including CDC (virtual serial port) and SWV Trace (optional, requires libusb).
 - [CMSIS-DAP](https://developer.mbed.org/handbook/CMSIS-DAP) - including CDC (virtual serial port) support.
 - [DAPLINK](https://github.com/mbedmicro/DAPLink) - including MSD (mass storage device) and CDC (virtual serial port) support.
 - [TI ICDI](http://www.ti.com/tool/stellaris_icdi_drivers) - including CDC (virtual serial port) support.
-- [J-Link](https://www.segger.com/products/debug-probes/j-link/) - including CDC (virtual serial port) support.
+- [Black Magic Probe](https://github.com/blacksphere/blackmagic) - including CDC (virtual serial port) support.
 
 Coming Soon:
 
-- [Black Magic Probe](https://github.com/blacksphere/blackmagic)
 - [PEmicro](http://www.pemicro.com/opensda/)
 
 ### Development Boards with Embedded Debug Probes
@@ -56,7 +59,7 @@ Boards from the following product families include embedded debug probes that sh
 
 *Note:* Many development boards support OpenSDA, which allows a choice of firmware to be installed. Debug probes may support
 CMSIS-DAP, DAPLINK, J-Link and PEMicro firmware variants. Be sure to upgrade to the most recent firmware available, and ensure that
-a variant supporting OpenOCD (CMSIS-DAP/DAPLINK) or J-Link is installed.
+a variant supporting OpenOCD (CMSIS-DAP/DAPLINK) or J-Link is installed. Please see [Upgrading Development Board Firmware](FIRMWARE.md).
 
 ### Development Boards with Flash Loader Support
 
@@ -64,6 +67,7 @@ Boards from the following product families use flash loaders that are supported.
 
 - [Feather M0](https://www.adafruit.com/feather)
 - [Teensy 3.x and LC](https://www.pjrc.com/teensy/)
+- STM32 DFU Bootloader
 
 ## Prerequisites
 
@@ -78,11 +82,17 @@ These tools must be installed in your PATH.
 
 You must have the appropriate tools installed for the debug probes / dev boards that you wish to use.
 
-- [OpenOCD](http://openocd.org) - required for STLink, DAPLINK, CMSIS-DAP, and TI ICDI debug probes
+- [OpenOCD](http://openocd.org) - 0.10 or later required for STLink, DAPLINK, CMSIS-DAP, and TI ICDI debug probes
 - [J-Link](https://www.segger.com/downloads/jlink) - required for J-Link debug probes.
 - [Bossa](http://www.shumatech.com/web/products/bossa) - required for Arduino and Feather devices
 - [Teensy Loader](https://www.pjrc.com/teensy/loader_cli.html) - required for Teensy devices
 - [libusb](http://libusb.info) - required for STLink SWV Trace support.
+- [dfu-util](http://dfu-util.sourceforge.net) - required for STM32 DFU Bootloader support
+
+### Development Board Firmware
+
+If you are using a development board with embedded debug probe, check that you know what debug firmware you have
+installed and that it is up to date. Please see [Development Board Firmware](FIRMWARE.md).
 
 ## Installation
 
@@ -118,14 +128,15 @@ the dependency is not available.
 
 ```
 $ bobbin check
-      Rust 1.20.0-nightly (086eaa78e 2017-07-15)
+      Rust 1.20.0-nightly (83c659ef6 2017-07-18)
      Cargo 0.21.0-nightly (f709c35a3 2017-07-13)
-     Xargo 0.3.5
+     Xargo 0.3.8
        GCC 5.4.1 20160919 (release) [ARM/embedded-5-branch revision 240496]
-   OpenOCD 0.10.0+dev-g7c2dc13 (2017-02-12-10:20)
+   OpenOCD 0.10.0+dev-00092-g77189db (2017-03-01-20:42)
      JLink V6.15c (Compiled Apr 24 2017 19:07:08)
      Bossa 1.7.0
     Teensy 2.1
+  dfu-util 0.9
 ```
 
 Please include the "bobbin check" output when reporting problems.
@@ -249,6 +260,30 @@ or 15 seconds to complete the entire test. In the future these timeouts will be 
 
 ## Configuration
 
+### Selecting a specfic device
+
+If you have multiple debug probes connected, you can tell Bobbin which device to use on a per-directory basis.
+Bobbin will look for a TOML configuration file in the .bobbin directory (.bobbin/config).
+
+To select a specific device, create a [filter] section with a "device" key that includes the prefix of the
+device id. For instance,
+
+```
+$ bobbin list
+ID       VID :PID  Vendor                   Product                          Serial Number
+f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
+8c6bbec5 0d28:0204 ARM                      DAPLink CMSIS-DAP                0260000025414e450049501247e0004e30f1000097969900
+cb46720d 1cbe:00fd Texas Instruments        In-Circuit Debug Interface       0F007E1A
+
+$ mkdir .bobbin
+$ cat > test
+[filter]
+device = "f95f4aca"
+$ bobbin list
+ID       VID :PID  Vendor                   Product                          Serial Number
+f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
+```
+
 ### OpenOCD
 
 When using a debug probe / development board that uses OpenCD, you must have an openocd.cfg file in your
@@ -293,48 +328,39 @@ $
 Bobbin will invoke OpenOCD with additional command line parameters specifying the USB serial number
 of the device to open.
 
-### Selecting a specfic device
+### J-Link
 
-If you have multiple debug probes connected, you can tell Bobbin which device to use on a per-directory basis.
-Bobbin will look for a TOML configuration file in the .bobbin directory (.bobbin/config).
-
-To select a specific device, create a [filter] section with a "device" key that includes the prefix of the
-device id. For instance,
-
-```
-$ bobbin list
-ID       VID :PID  Vendor                   Product                          Serial Number
-f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
-8c6bbec5 0d28:0204 ARM                      DAPLink CMSIS-DAP                0260000025414e450049501247e0004e30f1000097969900
-cb46720d 1cbe:00fd Texas Instruments        In-Circuit Debug Interface       0F007E1A
-
-$ mkdir .bobbin
-$ cat > test
-[filter]
-device = "f95f4aca"
-$ bobbin list
-ID       VID :PID  Vendor                   Product                          Serial Number
-f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
-```
-
-### Specifying Teensy Loader MCU
-
-teensy_loader_cli requires an additional command line parameter --mcu=&lt;MCU&gt; that tells it the exact MCU being used. You
-will need to add the appropiate MCU key to the [loader] section of your .bobbin/config:
+J-Link debug probes require a device identfier that specifies the target MCU. You must specify this by using the
+--jlink-device=&lt;JLINK-DEVICE&gt; command line parameter or by adding a jlink-device key to the [loader] section
+of your .bobbin/config file:
 
 ```
 [loader]
-mcu = "mk20dx256" # Teensy 3.2
+jlink-device = "S32K144"
+```
+
+You may view a list of devices at [J-Link - Supported Devices](https://www.segger.com/products/debug-probes/j-link/technology/cpus-and-devices/j-link-supported-devices/).
+
+### Teensy Loader
+
+teensy_loader_cli requires an additional command line parameter --teensy-mcu=&lt;MCU&gt; that tells it the exact MCU being used. You
+will need to add a teensy-mcu key to the [loader] section of your .bobbin/config file:
+
+```
+[loader]
+teensy-mcu = "mk20dx256" # Teensy 3.2
 ```
 ```
 [loader]
-mcu = "mk64fx512" # Teensy 3.5
+teensy-mcu = "mk64fx512" # Teensy 3.5
 ```
 ```
 [loader]
-mcu = "mk66fx1m0" # Teensy 3.6
+teensy-mcu = "mk66fx1m0" # Teensy 3.6
 ```
 ```
 [loader]
-mcu = "mkl26z64" # Teensy LC
+teensy-mcu = "mkl26z64" # Teensy LC
 ```
+
+Use 'teensy_loader_cli --list-mcus' to view a list of supported MCUs.
