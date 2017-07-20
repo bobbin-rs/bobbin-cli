@@ -3,6 +3,7 @@
 
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
 extern crate clap;
 extern crate toml;
 extern crate sha1;
@@ -103,8 +104,8 @@ fn run() -> Result<()> {
         cmd::control(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("openocd") {
         cmd::openocd(&cfg, &args, cmd_args, &mut out)
-    } else if let Some(cmd_args) = args.subcommand_matches("jlinkgdbserver") {
-        cmd::jlink_gdb_server(&cfg, &args, cmd_args, &mut out)
+    } else if let Some(cmd_args) = args.subcommand_matches("jlink") {
+        cmd::jlink(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("gdb") {
         cmd::gdb(&cfg, &args, cmd_args, &mut out)
     } else if let Some(cmd_args) = args.subcommand_matches("console") {

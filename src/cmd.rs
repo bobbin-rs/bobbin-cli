@@ -16,6 +16,7 @@ pub fn check(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    writeln!(out, "    Bobbin {}", crate_version!())?;
     writeln!(out, "      Rust {}", check::rust_version().unwrap_or(String::from("Not Found")))?;
     writeln!(out, "     Cargo {}", check::cargo_version().unwrap_or(String::from("Not Found")))?;
     writeln!(out, "     Xargo {}", check::xargo_version().unwrap_or(String::from("Not Found")))?;
@@ -294,7 +295,7 @@ pub fn openocd(
 }
 
 
-pub fn jlink_gdb_server(
+pub fn jlink(
     cfg: &Config,
     args: &ArgMatches,
     cmd_args: &ArgMatches,
@@ -314,27 +315,21 @@ pub fn jlink_gdb_server(
         devices.remove(0)
     };
 
-    let jlink_dev = if let Some(default_loader) = cfg.default_loader() {
-        if let Some(ldr_cfg) = default_loader.as_table() {
-            if let Some(mcu) = ldr_cfg["jlink_device"].as_str() {
-                mcu
-            } else {
-                bail!("JLink Loader requires that jlink_device is specified");
-            }
-        } else {
-            bail!("JLink Loader requires that jlink_device is specified");
-        }
+    let jlink_dev = if let Some(jlink_dev) = cmd_args.value_of("jlink-device") {
+        jlink_dev
+    } else if let Some(jlink_dev) = cfg.jlink_device() {
+        jlink_dev
     } else {
-        bail!("JLink Loader requires that jlink_device is specified");
-    };    
+        bail!("JLink Loader requires that --jlink-device is specified");
+    }; 
 
     let mut cmd = Command::new("JLinkGDBServer");
     cmd.arg("-device").arg(jlink_dev);
     cmd.arg("-if").arg("SWD");
-    cmd.arg("-autoconnect").arg("1");
     cmd.arg("-speed").arg("4000");
-    cmd.arg("-SelectEmuBySN").arg(
-        device.usb().serial_number.clone(),
+    cmd.arg("-port").arg("3333");
+    cmd.arg("-select").arg(
+        format!("usb={}",device.usb().serial_number),
     );
 
     cmd.exec();

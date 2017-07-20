@@ -101,7 +101,7 @@ would execute \"make blinky\" and then continue on success, using build/blinky.e
 
 pub fn app() -> App<'static, 'static> {
     App::new("bobbin")
-        .version("0.1")
+        .version(crate_version!())
         .author("Jonathan Soo <jcsoo@agora.com>")
         .about(ABOUT)
         .arg(Arg::with_name("verbose").long("verbose").short("v").help("Displays verbose output"))
@@ -231,7 +231,7 @@ pub fn app() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("openocd")
             .about("Start OpenOCD for the selected device")
         )
-        .subcommand(SubCommand::with_name("jlinkgdbserver")
+        .subcommand(SubCommand::with_name("jlink")
             .about("Start JLinkGDBServer for the selected device")
         )        
         .subcommand(SubCommand::with_name("gdb")

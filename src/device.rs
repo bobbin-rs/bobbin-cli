@@ -594,6 +594,31 @@ impl Device for Xds110Device {
     }
 }
 
+pub struct OlimexDevice {
+    usb: UsbDevice,
+}
+
+impl Device for OlimexDevice {
+    fn usb(&self) -> &UsbDevice {
+        &self.usb
+    }
+
+    fn device_type(&self) -> Option<&str> {
+        Some("Olimex")
+    }
+
+    fn loader_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    fn debugger_type(&self) -> Option<&str> {
+        Some("OpenOCD")
+    }
+
+    fn openocd_serial(&self) -> Option<String> {
+        Some(format!("ftdi_serial {}", self.usb.serial_number))
+    }
+}
 
 pub struct DeviceFilter {
     all: bool,
@@ -654,6 +679,7 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
         (0x0483, 0xdf11) => Box::new(Stm32Device { usb: usb }),
         (0x1d50, 0x6018) => Box::new(BlackMagicDevice { usb: usb }),
+        (0x15ba, 0x002a) => Box::new(OlimexDevice { usb: usb }),
         // Vendor Prefix Only
         (0x1366, _) => Box::new(JLinkDevice { usb: usb }),        
         _ => Box::new(UnknownDevice { usb: usb }),
