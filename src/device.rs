@@ -4,7 +4,7 @@ use ioreg;
 #[cfg(target_os = "linux")]
 use sysfs;
 use clap::ArgMatches;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::fs;
 use std::io::Read;
 use std::fmt::Write;
@@ -116,16 +116,27 @@ impl Device for JLinkDevice {
 
     #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}",
+        let path = format!("/dev/cu.usbmodem{}{}",
             format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
             1,
-        ))
+        );
+        if Path::new(&path).exists() {
+            Some(path)
+        } else {
+            None
+        }
     }
 
     #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
-            sysfs::cdc_path(path, "1.0")
+            if let Some(cdc_path) = sysfs::cdc_path(path, "1.0") {
+                if Path::new(cdc_path).exists() {
+                    Some(cdc_path)
+                } else {
+                    None
+                }
+            }
         } else {
             None
         }
