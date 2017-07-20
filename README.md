@@ -161,6 +161,7 @@ cb46720d 1cbe:00fd Texas Instruments        In-Circuit Debug Interface       0F0
 8c6bbec5 0d28:0204 ARM                      DAPLink CMSIS-DAP                0260000025414e450049501247e0004e30f1000097969900
 f95f4aca 0d28:0204 ARM                      DAPLink CMSIS-DAP                0240000034544e45001b00028aa9001a2011000097969900
 c2f3dc42 0483:374b STMicroelectronics       STM32 STLink                     0670FF484957847167071621
+$
 ```
 
 The device ID is a hash of the USB Vendor ID, USB Product ID, and USB Serial Number (if available). "bobbin list" displays
@@ -183,6 +184,7 @@ Loader Type      OpenOCD
 Debugger Type    OpenOCD
 CDC Device       /dev/cu.usbmodem141413
 OpenOCD Serial   hla_serial 0670FF484957847167071621
+$
 ```
 
 If you have more than one connected device, you can select a specific device by using the -d command line
@@ -201,6 +203,15 @@ pass through any --target, --bin, --example or --release parameters.
 
 On completion, bobbin-cli will run `arm-none-eabi-size` on the binary and display the output.
 
+```
+$ bobbin build
+   Compiling blue-pill v0.1.0 (file:///home/bobbin/bobbin-blinky/blue-pill)
+    Finished dev [optimized + debuginfo] target(s) in 0.50 secs
+   text	   data	    bss	    dec	    hex	filename
+    152	      0	      4	    156	     9c	target/thumbv7em-none-eabihf/debug/blue-pill
+$
+```
+
 ### Bobbin Load
 
 `bobbin load` runs `bobbin build` and then, if successful, load the binary onto the device
@@ -210,6 +221,19 @@ to `bobbin build`.
 
 `bobbin load` will interpret the build parameters as well as the Cargo.toml file to determine
 the path to the binary.
+
+```
+$ bobbin load
+   Compiling blue-pill v0.1.0 (file:///home/bobbin/bobbin-blinky/blue-pill)
+    Finished dev [optimized + debuginfo] target(s) in 0.13 secs
+   text	   data	    bss	    dec	    hex	filename
+    152	      0	      4	    156	     9c	target/thumbv7em-none-eabihf/debug/blue-pill
+     Loading target/thumbv7em-none-eabihf/debug/blue-pill.hex
+    Complete Successfully flashed device
+      Loader Load Complete
+$
+```
+
 
 Some devices require manual intervention to enter bootloader mode; you should do this before
 running `bobbin load`.
@@ -239,6 +263,23 @@ If bobbin-cli is compiled with support for SWO trace, you can pass the --itm par
 to display ITM output instead of running the serial console. You will also need to pass
 the --itm-target-clock parameter with the target's clock speed.
 
+```
+$ bobbin load
+   Compiling blue-pill v0.1.0 (file:///home/bobbin/bobbin-blinky/blue-pill)
+    Finished dev [optimized + debuginfo] target(s) in 0.13 secs
+   text	   data	    bss	    dec	    hex	filename
+    152	      0	      4	    156	     9c	target/thumbv7em-none-eabihf/debug/blue-pill
+     Loading target/thumbv7em-none-eabihf/debug/blue-pill.hex
+    Complete Successfully flashed device
+      Loader Load Complete
+     Console Opening Console
+Hello World 1
+Hello World 2
+Hello World 3
+^C
+$
+```
+
 ### Bobbin Test
 
 `bobbin test` runs `bobbin run` and then interprets the serial output, looking for
@@ -261,6 +302,7 @@ $ bobbin test
 [pass] 3
 [pass] 4
 [done] All tests passed
+$
 ```
 
 `bobbin test` recognizes [start], [pass] and [done] tags, exiting with return code 0. It also recognizes
@@ -271,6 +313,17 @@ The test runner will exit with return code 1 if there is a delay of more than 5 
 or 15 seconds to complete the entire test. In the future these timeouts will be configurable.
 
 ### Additional Subcommands
+
+`bobbin reset` resets the target device.
+
+`bobbin halt` halts the target device, if supported.
+
+`bobbin resume` resumes the target device, if supported.
+
+`bobbin console` starts a console viewer session using the selected device's serial port at a speed
+of 115,200.
+
+`bobbin itm` starts an itm viewer session using the selected device.
 
 `bobbin screen` starts a `screen` session using the selected device's serial port at a speed
 of 115,200.
