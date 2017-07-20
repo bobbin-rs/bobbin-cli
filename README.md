@@ -1,8 +1,6 @@
 # Bobbin-CLI
 
-bobbin-cli (bobbin) is a command line tool for automating your embedded development workflow.
-
-bobbin-cli (bobbin) is a tool designed to make it easy to build, deploy, test and debug embedded
+bobbin-cli is a tool designed to make it easy to build, deploy, test and debug embedded
 devices using a unified CLI. bobbin-cli understands Rust's cargo / xargo package managers
 but can also work with Make or any other build system.
 
@@ -23,15 +21,14 @@ bobbin-cli has the following main areas of functionality:
    console of the selected device if available. You can also start an instance of OpenOCD and gdb with
    the output binary produced by the build stage.
 
-For a collection of LED blinking demo firmware for a wide variety of popular development boards,
-(useful for verifying that your toolchain works) see [bobbin-blinky](https://github.com/bobbin-rs/bobbin-blinky/)
+For a collection of LED blinking demos for a wide variety of popular development boards,
+see [bobbin-blinky](https://github.com/bobbin-rs/bobbin-blinky/).
 
-## Supported Host Platforms
+## Host Platforms
 
 MacOS and Linux are currently supported, Windows support is planned.
 
 ## Supported Devices
-
 
 ### Debug Probes
 
@@ -39,7 +36,7 @@ Currently Supported:
 
 - [J-Link](https://www.segger.com/products/debug-probes/j-link/) - including CDC (virtual serial port) support.
 - [ST-Link/V2](http://www.st.com/en/development-tools/st-link-v2.html) - V2 and V2.1 devices supported,
-including CDC (virtual serial port) and SWV Trace (optional, requires libusb).
+including CDC (virtual serial port) and SWO Trace (optional, requires libusb).
 - [CMSIS-DAP](https://developer.mbed.org/handbook/CMSIS-DAP) - including CDC (virtual serial port) support.
 - [DAPLINK](https://github.com/mbedmicro/DAPLink) - including MSD (mass storage device) and CDC (virtual serial port) support.
 - [TI ICDI](http://www.ti.com/tool/stellaris_icdi_drivers) - including CDC (virtual serial port) support.
@@ -89,7 +86,7 @@ You must have the appropriate tools installed for the debug probes / dev boards 
 - [J-Link](https://www.segger.com/downloads/jlink) - required for J-Link debug probes.
 - [Bossa](http://www.shumatech.com/web/products/bossa) - required for Arduino and Feather devices
 - [Teensy Loader](https://www.pjrc.com/teensy/loader_cli.html) - required for Teensy devices
-- [libusb](http://libusb.info) - required for STLink SWV Trace support.
+- [libusb](http://libusb.info) - required for STLink SWO Trace support.
 - [dfu-util](http://dfu-util.sourceforge.net) - required for STM32 DFU Bootloader support
 
 ### Development Board Firmware
@@ -101,13 +98,11 @@ installed and that it is up to date. Please see [Development Board Firmware](FIR
 
 *Note:* Only Linux and macOS hosts are supported at this time.
 
-<!--
 To install from cargo:
 
 ```
 $ cargo install bobbin-cli
 ```
--->
 
 To install from github:
 
@@ -119,12 +114,19 @@ $ cargo install
 
 To install with ST-Link SWV Trace support:
 
-
 ```
 $ cargo install --features stlink
 ```
 
-## Checking Dependencies
+## Usage
+
+The name of the executable is `bobbin`.
+
+### Help
+
+You can display detailed help text by using `bobbin -h`.
+
+### Bobbin Check
 
 Use "bobbin check" to list the version numbers of all Bobbin dependencies. "Not Found" will be displayed if
 the dependency is not available.
@@ -144,18 +146,9 @@ $ bobbin check
 
 Please include the "bobbin check" output when reporting problems.
 
-## Usage
+### Bobbin List
 
-If you have only a single debugging device connected to your computer, you should be able to view
-it using "bobbin list", which should produce output like this:
-
-```
-$ bobbin list
-ID       VID :PID  Vendor                   Product                          Serial Number
-c2f3dc42 0483:374b STMicroelectronics       STM32 STLink                     0670FF484957847167071621
-```
-
-or if you have multiple devices connected:
+Use "bobbin list" to view all debug probes and development boards connected to your host.
 
 ```
 $ bobbin list
@@ -173,10 +166,9 @@ c2f3dc42 0483:374b STMicroelectronics       STM32 STLink                     067
 The device ID is a hash of the USB Vendor ID, USB Product ID, and USB Serial Number (if available). "bobbin list" displays
 the first eight hex digits of the device ID, and "bobbin info" displays the full 64 bit ID.
 
-Most subcommands will take a global parameter "-d" to specify a specific device ID from the first column. You
-may use a unique prefix of the ID - for instance 4c01 instead of 4c01a4ad.
+### Bobbin Info
 
-To view additional information, you may use the "info" subcommand:
+To view detailed information about a devices, use the "bobbin info" subcommand.
 
 ```
 $ bobbin -d 4c01 info
@@ -193,10 +185,8 @@ CDC Device       /dev/cu.usbmodem141413
 OpenOCD Serial   hla_serial 0670FF484957847167071621
 ```
 
-Note that for this device, bobbin-cli has identified the virtual serial port and also knows the proper
-OpenOCD --command parameter to force use of this specific device.
-
-bobbin-cli will also look for a device filter directive in a YAML configuration file at ./bobbin/config
+If you have more than one connected device, you can select a specific device by using the -d command line
+parameter. bobbin-cli will also look for a device filter directive in a YAML configuration file at ./bobbin/config
 
 ```
 $ cat .bobbin/config
@@ -204,36 +194,55 @@ $ cat .bobbin/config
 device = "c2f3dc42"
 ```
 
-To build and run a Rust embedded application, simply use "bobbin run" with optional--target, --bin,
---example and --release parameters, just as you would use xargo or xargo directly. bobbin-cli will
-use these parameters as well as the local .cargo/config and Cargo.toml file to determine the path of
-the output file. It will then execute the appropriate flash loader application for your device (OpenOCD, 
-JLinkExe, bossac or teensy_loader_cli), using objcopy as needed to convert to the required format.
+### Bobbin Build
 
-Some devices require manual intervention to enter bootloader mode.
+`bobbin build` runs xargo (by default) or make to build your application. If using xargo, bobbin-cli will
+pass through any --target, --bin, --example or --release parameters. 
 
-By default, if your selected debugger has a detected virtual serial port, bobbin-cli will connect to that
-serial port [NOTE: currently hard-coded to 115,200 baud] and display all output. Use Control-C to terminate
-this console viewer. You can use the --console parameter to manually specify a serial device, or
---noconsole if you do not want run the console viewer at all.
+On completion, bobbin-cli will run `arm-none-eabi-size` on the binary and display the output.
 
-Finally, you may occasionally need to use OpenOCD (or some other GDB remote debugger) and GDB to debug
-a problem. "bobbin openocd" will automatically start OpenOCD with the appropriate parameters to
-connect to your specific device, and (in a separate window) "bobbin gdb" will build your application
-and then run arm-none-eabi-gdb with the appropiate output binary path as the first parameter. You may wish
-to have a .gdbinit file that automatically connects to your local OpenOCD instance.
+### Bobbin Load
 
-If you are not using xargo / cargo as your build manager, you have the option of specifying the output binary
-path using --binary. You can also use Make as your build manager by using the --make parameter followed by
-optional make targets. For instance:
+`bobbin load` runs `bobbin build` and then, if successful, load the binary onto the device
+using the selected debugger or loader, using objcopy as needed to convert to the appropriate
+format. You may include --target, --bin, --example or --release parameters which will be passed
+to `bobbin build`.
 
-$ bobbin run --make blinky --binary build/blinky.elf
+`bobbin load` will interpret the build parameters as well as the Cargo.toml file to determine
+the path to the binary.
 
-would execute "make blinky" and then continue on success, using build/blinky.elf as the output binary.
+Some devices require manual intervention to enter bootloader mode; you should do this before
+running `bobbin load`.
 
-## Tests
+*Note: Many debuggers and loaders require additional configuration*
 
-Bobbin has a simple test running using a simple text-based format. An example:
+- OpenOCD: a properly configured openocd.cfg file must be in the current directory. bobbin will add 
+the appropriate OpenOCD command line parameters to select the specific device.
+- J-Link: you must specify the device type through the --jlink-device command line parameter or
+in the .bobbin/config file.
+- Teensy Loader: you must specify the device type through the --teensy-mcu command line parameter or
+in the .bobbin/config file.
+
+### Bobbin Run
+
+`bobbin run` runs `bobbin load` and then, if successful, open the serial console of the
+connected device to display the output. Use Control-C to terminate this console viewer.
+
+If the selected device does not have an associated serial port, that step will be skipped. 
+
+You can use the --console parameter to manually specify a serial device, or --noconsole if 
+you do not want run the console viewer at all.
+
+*Note: the serial viewer is currently hard-coded to 115,200 baud*
+
+If bobbin-cli is compiled with support for SWO trace, you can pass the --itm parameter
+to display ITM output instead of running the serial console. You will also need to pass
+the --itm-target-clock parameter with the target's clock speed.
+
+### Bobbin Test
+
+`bobbin test` runs `bobbin run` and then interprets the serial output, looking for
+tags indicating test progress and completion.
 
 ```
 $ bobbin test
@@ -254,16 +263,39 @@ $ bobbin test
 [done] All tests passed
 ```
 
-Bobbin will detect the [start], [pass] and [done] tags, exiting with return code 0. It also recognizes
+`bobbin test` recognizes [start], [pass] and [done] tags, exiting with return code 0. It also recognizes
 [fail], [exception], and [panic] tags, which will cause it to exit with return codes 1, 2 or 3. All other
 output is ignored.
 
 The test runner will exit with return code 1 if there is a delay of more than 5 seconds between lines
 or 15 seconds to complete the entire test. In the future these timeouts will be configurable.
 
+### Additional Subcommands
+
+`bobbin screen` starts a `screen` session using the selected device's serial port at a speed
+of 115,200.
+
+`bobbin openocd` starts an `openocd` session using the selected device.
+
+`bobbin jlink` starts a JLinkGDBServer session using the selected device.
+
+`bobbin gdb` starts a GDB session with the current target binary as the executable. For debug probes
+that are GDB native, this command will connect directly to the device; for debug probes using
+OpenOCD or JLinkGDBServer, you must use `target remote :3333` manually or in a .gdbinit file.
+
+### Using Make instead of Xargo
+
+If you are not using xargo / cargo as your build manager, you have the option of specifying the output binary
+path using --binary. You can also use Make as your build manager by using the --make parameter followed by
+optional make targets. For instance:
+
+$ bobbin run --make blinky --binary build/blinky.elf
+
+would execute "make blinky" and then continue on success, using build/blinky.elf as the output binary.
+
 ## Configuration
 
-### Selecting a specfic device
+### Selecting a device
 
 If you have multiple debug probes connected, you can tell Bobbin which device to use on a per-directory basis.
 Bobbin will look for a TOML configuration file in the .bobbin directory (.bobbin/config).
