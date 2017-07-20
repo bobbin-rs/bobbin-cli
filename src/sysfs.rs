@@ -57,6 +57,7 @@ pub fn cdc_path(path: &Path, child: &str) -> Option<String> {
     let root = Path::new("/sys/bus/usb/drivers/cdc_acm/abc.txt");
     let name = format!("{}:{}", path.file_name().unwrap().to_str().unwrap(), child);
     let tty_dir = root.with_file_name(name).join("tty");
+    if !tty_dir.exists() { return None }
     for entry in fs::read_dir(tty_dir).unwrap() {
         let entry = entry.unwrap();
         return Some(format!("/dev/{}", entry.file_name().to_str().unwrap()));

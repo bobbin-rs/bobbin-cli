@@ -131,11 +131,13 @@ impl Device for JLinkDevice {
     fn cdc_path(&self) -> Option<String> {
         if let Some(ref path) = self.usb().path {
             if let Some(cdc_path) = sysfs::cdc_path(path, "1.0") {
-                if Path::new(cdc_path).exists() {
+                if Path::new(&cdc_path).exists() {
                     Some(cdc_path)
                 } else {
                     None
                 }
+            } else {
+                None
             }
         } else {
             None
