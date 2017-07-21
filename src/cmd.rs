@@ -38,22 +38,19 @@ pub fn list(
     let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter);
 
-    writeln!(out, "{:08} {:04}:{:04} {:24} {:32} {:24}",
+    writeln!(out, "{:08} {:08}  {:40} {:24}",
         "ID",
-        "VID",
-        "PID",
-        "Vendor",
-        "Product",
+        " VID:PID",
+        "Vendor / Product",
         "Serial Number",
         )?;
     for d in devices?.iter() {
         let u = d.usb();
-        write!(out, "{:08} {:04x}:{:04x} {:24} {:32} {:24}",
+        write!(out, "{:08} {:04x}:{:04x} {:40} {:24}",
             &d.hash()[..8],
             u.vendor_id,
             u.product_id,
-            u.vendor_string,
-            u.product_string,
+            format!("{} / {}", u.vendor_string, u.product_string),
             u.serial_number,
             )?;
         writeln!(out, "")?;
