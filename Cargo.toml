@@ -7,7 +7,7 @@ homepage = "https://github.com/bobbin-rs/bobbin-cli/"
 repository = "https://github.com/bobbin-rs/bobbin-cli/"
 readme = "README.md"
 keywords = ["embedded"]
-license = "MIT/Apache 2.0"
+license = "MIT/Apache-2.0"
 
 [[bin]]
 name = "bobbin"
