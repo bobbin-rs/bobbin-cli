@@ -264,8 +264,8 @@ to display ITM output instead of running the serial console. You will also need 
 the --itm-target-clock parameter with the target's clock speed.
 
 ```
-$ bobbin load
-   Compiling blue-pill v0.1.0 (file:///home/bobbin/bobbin-blinky/blue-pill)
+$ bobbin run
+   Compiling blue-pill v0.1.0 (file:///home/bobbin/bobbin-hello/blue-pill)
     Finished dev [optimized + debuginfo] target(s) in 0.13 secs
    text	   data	    bss	    dec	    hex	filename
     152	      0	      4	    156	     9c	target/thumbv7em-none-eabihf/debug/blue-pill
