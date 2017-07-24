@@ -316,7 +316,7 @@ impl BlackMagicDebugger {
             cmd.arg("-ex").arg("set confirm off");
             cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
             // These commands are BlackMagic Probe Specific
-            cmd.arg("-ex").arg("monitor jtag_scan");
+            cmd.arg("-ex").arg("monitor swdp_scan");
             cmd.arg("-ex").arg("attach 1");
         }
         cmd.arg("-ex").arg(action);
