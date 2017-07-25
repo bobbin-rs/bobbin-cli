@@ -45,33 +45,13 @@ pub fn build(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<Option<PathBuf>> {
-    if cmd_args.is_present("no-build") {
+    if cmd_args.is_present("no-build") || cmd_args.is_present("binary") {
         Ok(Some(build_path(cfg, args, cmd_args)?))
-    } else if cmd_args.is_present("make") {
-        build_make(cfg, args, cmd_args, out)
     } else {
         build_xargo(cfg, args, cmd_args, out)
     }
 }
-pub fn build_make(
-    cfg: &Config,
-    args: &ArgMatches,
-    cmd_args: &ArgMatches,
-    out: &mut Printer,
-) -> Result<Option<PathBuf>> {
-    let dst = build_path(cfg, args, cmd_args)?;
-    let mut cmd = Command::new("make");
-    out.verbose("make", &format!("{:?}", cmd))?;
-    for arg in cmd_args.values_of_os("make").unwrap().into_iter() {
-        cmd.arg(arg);
-    }
 
-    if !cmd.status()?.success() {
-        bail!("make failed");
-    }
-
-    Ok(Some(dst))
-}
 pub fn build_xargo(
     cfg: &Config,
     args: &ArgMatches,
