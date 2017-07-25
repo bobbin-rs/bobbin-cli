@@ -9,6 +9,8 @@ use tempfile;
 
 use Result;
 
+use blackmagic::blackmagic_scan;
+
 pub trait Load {
     fn load(
         &self,
@@ -305,6 +307,7 @@ impl Load for BlackMagicLoader {
         target: &Path,
     ) -> Result<()> {
 
+        let blackmagic_scan = blackmagic_scan(cfg, args, cmd_args)?;
 
         out.info("Loading", &format!("{}", target.display()))?;
 
@@ -313,7 +316,7 @@ impl Load for BlackMagicLoader {
             cmd.arg("-ex").arg("set confirm off");
             cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
             // These commands are BlackMagic Probe Specific
-            cmd.arg("-ex").arg("monitor swdp_scan");
+            cmd.arg("-ex").arg(blackmagic_scan);
             cmd.arg("-ex").arg("attach 1");
             cmd.arg("-ex").arg("load");
             cmd.arg("-ex").arg("kill");

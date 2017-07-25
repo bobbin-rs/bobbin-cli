@@ -93,8 +93,8 @@ impl Config {
     pub fn teensy_mcu(&self) -> Option<&str> {
         if let Some(default_loader) = self.default_loader() {
             if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(jlink_device) = ldr_cfg.get("teensy-mcu") {
-                    jlink_device.as_str()
+                if let Some(teensy_mcu) = ldr_cfg.get("teensy-mcu") {
+                    teensy_mcu.as_str()
                 } else {
                     None
                 }   
@@ -105,6 +105,23 @@ impl Config {
             None
         }
     }
+
+
+    pub fn blackmagic_mode(&self) -> Option<&str> {
+        if let Some(default_loader) = self.default_loader() {
+            if let Some(ldr_cfg) = default_loader.as_table() {
+                if let Some(blackmagic_mode) = ldr_cfg.get("blackmagic-mode") {
+                    blackmagic_mode.as_str()
+                } else {
+                    None
+                }   
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }    
 }
 
 pub fn read_cargo_config() -> Result<Value> {

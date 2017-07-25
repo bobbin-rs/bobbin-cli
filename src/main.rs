@@ -28,6 +28,7 @@ mod debugger;
 mod printer;
 mod console;
 mod check;
+mod blackmagic;
 
 #[cfg(feature = "stlink")]
 mod stlink;

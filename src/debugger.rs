@@ -10,6 +10,8 @@ use std::path::Path;
 use tempfile;
 use Result;
 
+use blackmagic::blackmagic_scan;
+
 pub fn debugger(debugger_type: &str) -> Option<Box<Control>> {
     match debugger_type.to_lowercase().as_ref() {
         "openocd" => Some(Box::new(OpenOcdDebugger {})),
@@ -311,12 +313,14 @@ impl BlackMagicDebugger {
         device: &Device,
         action: &str,
     ) -> Result<()> {
+        let blackmagic_scan = blackmagic_scan(cfg, args, cmd_args)?;
+
         let mut cmd = Command::new("arm-none-eabi-gdb");
         if let Some(gdb_path) = device.gdb_path() {
             cmd.arg("-ex").arg("set confirm off");
             cmd.arg("-ex").arg(format!("target extended-remote {}", gdb_path));
             // These commands are BlackMagic Probe Specific
-            cmd.arg("-ex").arg("monitor swdp_scan");
+            cmd.arg("-ex").arg(blackmagic_scan);
             cmd.arg("-ex").arg("attach 1");
         }
         cmd.arg("-ex").arg(action);
