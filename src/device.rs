@@ -603,7 +603,7 @@ impl Device for Xds110Device {
     }
 
     fn openocd_serial(&self) -> Option<String> {
-        Some(format!("hla_serial {}", self.usb.serial_number))
+        Some(format!("cmsis_dap_serial {}", self.usb.serial_number))
     }
 }
 
