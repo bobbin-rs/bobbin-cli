@@ -10,6 +10,10 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
         return Ok(PathBuf::from(dst));
     }
 
+    if cmd_args.is_present("stdin") {
+        return Ok(PathBuf::from("--"))
+    }
+
     let mut dst = PathBuf::from("target");
 
     if let Some(t) = cmd_args.value_of("target") {
@@ -45,7 +49,7 @@ pub fn build(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<Option<PathBuf>> {
-    if cmd_args.is_present("no-build") || cmd_args.is_present("binary") {
+    if cmd_args.is_present("no-build") || cmd_args.is_present("binary") || cmd_args.is_present("stdin") {
         Ok(Some(build_path(cfg, args, cmd_args)?))
     } else {
         build_xargo(cfg, args, cmd_args, out)

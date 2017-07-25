@@ -2,13 +2,17 @@ use Result;
 use clap::ArgMatches;
 use config::Config;
 use printer::Printer;
-use std::io::Write;
+use std::io::{self, Read, Write};
+use std::path::PathBuf;
 use device;
 use builder;
 use loader;
 use debugger;
 use console;
 use check;
+use std::env;
+use std::fs::File;
+use sha1;
 
 pub fn check(
     cfg: &Config,
@@ -147,7 +151,7 @@ pub fn load(
         bail!("Selected device has no associated loader");
     };
 
-    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+    let mut dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
     } else {
         bail!("No build output available to load");
@@ -170,6 +174,18 @@ pub fn load(
         None
     };
 
+    if dst == PathBuf::from("--") {
+        let mut buffer: Vec<u8> = Vec::new();
+        io::stdin().read_to_end(&mut buffer)?;
+        let mut h = sha1::Sha1::new();
+        h.update(&buffer);
+
+        let mut path = env::temp_dir();
+        path.push(format!("bobbin-{}",h.digest().to_string()));
+        let mut tmpfile = File::create(path.clone())?;
+        tmpfile.write(buffer.as_ref())?;
+        dst = path;
+    }
     ldr.load(
         cfg,
         args,
