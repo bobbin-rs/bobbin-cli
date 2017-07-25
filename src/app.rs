@@ -15,7 +15,7 @@ bobbin-cli has the following main areas of functionality:
 
 -  Build management. bobbin-cli automatically uses xargo to build your project, and reads the
    command line parameters and your Cargo.toml file to automatically determine the output binary
-   to use. You can also use Make, with a required parameter to specify the output binary path.
+   to use. 
 
 -  Deployment. For supported devices, bobbin-cli can automatically use the appropriate flash
    loading tool (OpenOCD, JLinkExe, bossac or teensy_cli_loader) to upload the output binary.
@@ -89,14 +89,6 @@ a problem. \"bobbin openocd\" will automatically start OpenOCD with the appropri
 connect to your specific device, and (in a separate window) \"bobbin gdb\" will build your application
 and then run arm-none-eabi-gdb with the appropiate output binary path as the first parameter. You may wish
 to have a .gdbinit file that automatically connects to your local OpenOCD instance.
-
-If you are not using xargo / cargo as your build manager, you have the option of specifying the output binary
-path using --binary. You can also use Make as your build manager by using the --make parameter followed by
-optional make targets. For instance:
-
-$ bobbin run --make blinky --binary build/blinky.elf
-
-would execute \"make blinky\" and then continue on success, using build/blinky.elf as the output binary.
 ";
 
 pub fn app() -> App<'static, 'static> {
@@ -125,11 +117,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
-            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
-            .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")
-            )
-            .about("Build an application using xargo or make.")
+            .about("Build an application")
         )
         .subcommand(SubCommand::with_name("load")
             .arg(Arg::with_name("binary").long("binary").takes_value(true).help("Specify the path of the binary file to load."))
@@ -138,13 +126,9 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
-            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))
-            .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")
-            )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .about("Load an application onto the selected device after a successful build.")
         )
@@ -155,13 +139,9 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
-            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))                
-            .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")
-            )
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .arg(Arg::with_name("console").long("console").min_values(0).max_values(1)
                 .help("Specify the path to the serial device for the selected device.")
@@ -179,10 +159,6 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
             .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
-            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
-            .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")
-            )
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))                
@@ -247,9 +223,7 @@ pub fn app() -> App<'static, 'static> {
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
             .arg(Arg::with_name("features").long("features").takes_value(true).takes_value(true).help("Pass a --features parameter to xargo"))
             .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
-            .arg(Arg::with_name("make").long("make").takes_value(true).multiple(true).min_values(0)
-                .help("Use make for the build, optionally providing additional parameters")
-            )
+            .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .about("Start gdb using the build output as the target.")
         )
