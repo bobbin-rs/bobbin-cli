@@ -229,7 +229,7 @@ impl Load for TeensyLoader {
         out.info("Loading", &format!("{}", dst.display()))?;
 
         let mut cmd = Command::new("teensy_loader_cli");
-        cmd.arg(&format!("--mcu={}", teensy_mcu));
+        cmd.arg(&format!("-mmcu={}", teensy_mcu));
         cmd.arg("-v");
         cmd.arg(dst);
 
