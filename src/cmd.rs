@@ -10,9 +10,7 @@ use loader;
 use debugger;
 use console;
 use check;
-use std::env;
-use std::fs::File;
-use sha1;
+use tempfile;
 
 pub fn check(
     cfg: &Config,
@@ -151,7 +149,7 @@ pub fn load(
         bail!("Selected device has no associated loader");
     };
 
-    let mut dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
     } else {
         bail!("No build output available to load");
@@ -177,24 +175,29 @@ pub fn load(
     if dst == PathBuf::from("--") {
         let mut buffer: Vec<u8> = Vec::new();
         io::stdin().read_to_end(&mut buffer)?;
-        let mut h = sha1::Sha1::new();
-        h.update(&buffer);
-
-        let mut path = env::temp_dir();
-        path.push(format!("bobbin-{}",h.digest().to_string()));
-        let mut tmpfile = File::create(path.clone())?;
+        out.verbose("stdin", &format!("Read {} bytes from stdin", buffer.len()))?;
+        let mut tmpfile = tempfile::NamedTempFile::new()?;
         tmpfile.write(buffer.as_ref())?;
-        dst = path;
+        tmpfile.flush()?;
+        ldr.load(
+            cfg,
+            args,
+            cmd_args,
+            out,
+            device.as_ref(),
+            tmpfile.path()
+        )?;
+        out.verbose("stdin", "Removing temporary file.")?;
+    } else {
+        ldr.load(
+            cfg,
+            args,
+            cmd_args,
+            out,
+            device.as_ref(),
+            dst.as_path(),
+        )?;
     }
-    ldr.load(
-        cfg,
-        args,
-        cmd_args,
-        out,
-        device.as_ref(),
-        dst.as_path(),
-    )?;
-
     out.info("Loader", "Load Complete")?;
 
     if cmd_args.is_present("itm") {
