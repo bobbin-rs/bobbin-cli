@@ -41,6 +41,21 @@ pub struct OpenOcdLoader {}
 impl OpenOcdLoader {
     fn find_config(&self, device: &Device) -> Option<PathBuf> {
         let device_id = &device.hash()[..8];            
+
+        // Look in current path
+        let bobbin_openocd = Path::new("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+
+        // Look in .bobbin/<device-id>/
+        let mut bobbin_openocd = PathBuf::from(".bobbin");
+        bobbin_openocd.push(device_id);
+        bobbin_openocd.push("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+
         // Look in ~/.bobbin/<device-id>/
         if let Some(home) = env::home_dir() {
             let mut bobbin_openocd = home;
@@ -51,18 +66,7 @@ impl OpenOcdLoader {
                 return Some(bobbin_openocd)
             }        
         }
-        // Look in .bobbin/<device-id>/
-        let mut bobbin_openocd = PathBuf::from(".bobbin");
-        bobbin_openocd.push(device_id);
-        bobbin_openocd.push("openocd.cfg");
-        if bobbin_openocd.exists() {
-            return Some(bobbin_openocd.into())
-        }
-        // Look in current path
-        let bobbin_openocd = Path::new("openocd.cfg");
-        if bobbin_openocd.exists() {
-            return Some(bobbin_openocd.into())
-        }
+
         None
     }
 }
