@@ -66,7 +66,7 @@ pub fn enumerate() -> Result<Vec<UsbDevice>> {
     Ok(items)
 }
 
-fn visit<F: FnMut(&Plist)>(p: &Plist, mut f: &mut F) {
+fn visit<F: FnMut(&Plist)>(p: &Plist, f: &mut F) {
     if let Some(p_dict) = p.as_dictionary() {
         if p_dict.contains_key("idVendor") {
             f(p);
