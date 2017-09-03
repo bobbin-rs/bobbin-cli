@@ -32,7 +32,13 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
     } else if let Some(name) = cmd_args.value_of("bin") {
         dst.push(name);
     } else if let Some(name) = cfg.default_binary() {
-        dst.push(name);
+        let mut tmp = dst.clone();
+        tmp.push(name);
+        if tmp.exists() {            
+            dst = tmp;
+        } else {
+            dst.push("main");
+        }
     } else {
         bail!("No binary specified");
     };
@@ -59,7 +65,6 @@ pub fn build_make(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<Option<PathBuf>> {
-    let dst = build_path(cfg, args, cmd_args)?;
     let mut cmd = Command::new("make");
     out.verbose("make", &format!("{:?}", cmd))?;
     for arg in cmd_args.values_of_os("make").unwrap().into_iter() {
@@ -69,7 +74,7 @@ pub fn build_make(
     if !cmd.status()?.success() {
         bail!("make failed");
     }
-
+    let dst = build_path(cfg, args, cmd_args)?;
     Ok(Some(dst))
 }
 pub fn build_xargo(
@@ -78,7 +83,6 @@ pub fn build_xargo(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<Option<PathBuf>> {
-    let dst = build_path(cfg, args, cmd_args)?;
     let mut cmd = Command::new("xargo");
     cmd.arg("build");
 
@@ -101,6 +105,7 @@ pub fn build_xargo(
     if !cmd.status()?.success() {
         bail!("xargo build failed");
     }
+    let dst = build_path(cfg, args, cmd_args)?;
     if dst.is_file() {
         let mut cmd = Command::new("arm-none-eabi-size");
         out.verbose("size", &format!("{:?}", cmd))?;
