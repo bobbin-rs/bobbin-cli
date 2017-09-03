@@ -136,7 +136,7 @@ pub fn app() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("run")
             .arg(Arg::with_name("binary").index(1).takes_value(true).help("Specify the path of the binary file to load."))
             .arg(Arg::with_name("stdin").long("stdin").help("Read binary from stdin"))
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --bin parameter to xargo"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to xargo"))
             .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
             .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
             .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
