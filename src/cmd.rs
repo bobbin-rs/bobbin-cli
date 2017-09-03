@@ -37,6 +37,18 @@ pub fn list(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+    
+    if let Some(remote_host) = cmd_args.value_of("remote") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(remote_host);
+        cmd.arg(".cargo/bin/bobbin");
+        cmd.arg("list");
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter);
 
@@ -67,6 +79,21 @@ pub fn info(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+    
+    if let Some(remote_host) = cmd_args.value_of("remote") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(remote_host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(remote_device) = cmd_args.value_of("remote-device") {
+            cmd.arg("--device").arg(remote_device);
+        }        
+        cmd.arg("info");
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let devices = device::search(&filter)?;
 
@@ -127,6 +154,25 @@ pub fn load(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+        dst
+    } else {
+        bail!("No build output available to load");
+    };
+    out.verbose("target", &format!("{}", dst.display()))?;
+
+    if cmd_args.is_present("remote") {
+        let ldr = loader::RemoteLoader {};
+        ldr.load_remote(
+            cfg,
+            args,
+            cmd_args,
+            out,
+            dst.as_path(),
+        )?;
+        unreachable!()        
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -148,13 +194,6 @@ pub fn load(
     } else {
         bail!("Selected device has no associated loader");
     };
-
-    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
-        dst
-    } else {
-        bail!("No build output available to load");
-    };
-    out.verbose("target", &format!("{}", dst.display()))?;
 
     let con = if !cmd_args.is_present("noconsole") && !cmd_args.is_present("itm") {
         if args.is_present("run") || args.is_present("test") {

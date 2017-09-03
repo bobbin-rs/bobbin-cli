@@ -2,10 +2,12 @@ use clap::ArgMatches;
 use std::io::Write;
 use std::process::{Command, ExitStatus};
 use std::env;
+use std::fs::File;
 use config::Config;
 use printer::Printer;
 use device::Device;
 use std::path::{Path, PathBuf};
+
 use tempfile;
 
 use Result;
@@ -386,4 +388,58 @@ pub fn objcopy(output: &str, src: &Path, dst: &Path) -> Result<ExitStatus> {
     let mut cmd = Command::new("arm-none-eabi-objcopy");
     cmd.arg("-O").arg(output).arg(src).arg(dst);
     Ok(cmd.status()?)
+}
+
+pub struct RemoteLoader {}
+impl RemoteLoader {
+    pub fn load_remote(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        target: &Path,
+    ) -> Result<()> {
+        use std::process::*;
+        use std::os::unix::io::*;
+        use std::os::unix::process::CommandExt;
+
+        let remote_host = cmd_args.value_of("remote").expect("No value specified for 'remote'");
+
+        out.verbose("Remote", remote_host)?;
+
+        let bin = File::open(target)?;
+        let bin_fd = bin.into_raw_fd();
+
+        let mut cmd = Command::new("ssh");
+        cmd.arg(remote_host);
+        cmd.arg(".cargo/bin/bobbin");
+        if args.is_present("verbose") {
+            cmd.arg("-v");
+        }
+        if let Some(remote_device) = cmd_args.value_of("remote-device") {
+            cmd.arg("--device").arg(remote_device);
+        }
+        let subcmd = if args.is_present("load") {
+            "load"
+        } else if args.is_present("run") {
+            "run"
+        } else if args.is_present("test") {
+            "test"
+        } else {
+            bail!("Only load, run and test are supported for remote hosts")
+        };
+        cmd.arg(subcmd);
+        cmd.arg("--stdin");
+        if out.is_verbose() {
+            println!("{:?}", cmd);
+        }
+
+        let new_stdio = unsafe { Stdio::from_raw_fd(bin_fd) };
+
+        cmd
+            .stdin(new_stdio)
+            .exec();
+        unreachable!()
+    }
 }
