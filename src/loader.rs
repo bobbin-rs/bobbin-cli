@@ -1,6 +1,7 @@
 use clap::ArgMatches;
 use std::io::Write;
 use std::process::{Command, ExitStatus};
+use std::env;
 use config::Config;
 use printer::Printer;
 use device::Device;
@@ -37,6 +38,35 @@ pub fn loader(loader_type: &str) -> Option<Box<Load>> {
 
 pub struct OpenOcdLoader {}
 
+impl OpenOcdLoader {
+    fn find_config(&self, device: &Device) -> Option<PathBuf> {
+        let device_id = &device.hash()[..8];            
+        // Look in ~/.bobbin/<device-id>/
+        if let Some(home) = env::home_dir() {
+            let mut bobbin_openocd = home;
+            bobbin_openocd.push(".bobbin");
+            bobbin_openocd.push(device_id);
+            bobbin_openocd.push("openocd.cfg");
+            if bobbin_openocd.exists() {
+                return Some(bobbin_openocd)
+            }        
+        }
+        // Look in .bobbin/<device-id>/
+        let mut bobbin_openocd = PathBuf::from(".bobbin");
+        bobbin_openocd.push(device_id);
+        bobbin_openocd.push("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+        // Look in current path
+        let bobbin_openocd = Path::new("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+        None
+    }
+}
+
 impl Load for OpenOcdLoader {
     fn load(
         &self,
@@ -48,7 +78,11 @@ impl Load for OpenOcdLoader {
         target: &Path,
     ) -> Result<()> {
         let mut cmd = Command::new("openocd");
-        cmd.arg("--file").arg("openocd.cfg");
+        if let Some(openocd_cfg) = self.find_config(device) {
+            cmd.arg("--file").arg(openocd_cfg);
+        } else {
+            bail!("No openocd.cfg file was found.");
+        }
         cmd.arg("--command").arg(&device.openocd_serial().unwrap());
         cmd.arg("--command").arg("gdb_port disabled");
         cmd.arg("--command").arg("tcl_port disabled");
