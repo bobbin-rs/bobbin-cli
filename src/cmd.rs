@@ -40,7 +40,7 @@ pub fn list(
     use std::process::*;
     use std::os::unix::process::CommandExt;
     
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -88,7 +88,7 @@ pub fn info(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -174,7 +174,7 @@ pub fn load(
         bail!("No build output available to load");
     };
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let bin = File::open(dst)?;
         let mut cmd = Command::new("ssh");
         unsafe {
@@ -357,7 +357,7 @@ pub fn openocd(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg("-L").arg("3333:localhost:3333");        
         cmd.arg(host);
@@ -400,7 +400,7 @@ pub fn jlink(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg("-L").arg("3333:localhost:3333");
         cmd.arg(host);
@@ -469,7 +469,7 @@ pub fn gdb(
         bail!("No build output available for gdb");
     };
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("arm-none-eabi-gdb");
         cmd.arg("-ex").arg(format!("target extended-remote :3333"));
         cmd.arg(dst);
@@ -518,7 +518,7 @@ pub fn console(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -563,7 +563,7 @@ pub fn screen(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");

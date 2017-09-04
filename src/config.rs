@@ -42,6 +42,18 @@ impl Config {
 
         None
     }
+
+    pub fn filter_host(&self) -> Option<&str> {    
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref filter) = bobbin.filter {
+                if let Some(ref host) = filter.host {
+                    return Some(host)
+                }
+            }
+        }
+        None        
+    }
+
     pub fn filter_device(&self) -> Option<&str> {    
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref filter) = bobbin.filter {
@@ -52,6 +64,7 @@ impl Config {
         }
         None        
     }
+
     pub fn itm_target_clock(&self) -> Option<u32> {
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref itm) = bobbin.itm {
