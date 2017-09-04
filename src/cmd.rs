@@ -4,6 +4,11 @@ use config::Config;
 use printer::Printer;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
+use std::process::*;
+use std::os::unix::io::*;
+use std::os::unix::process::CommandExt;
+use std::fs::File;
+
 use device;
 use builder;
 use loader;
@@ -36,11 +41,8 @@ pub fn list(
     args: &ArgMatches,
     cmd_args: &ArgMatches,
     out: &mut Printer,
-) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-    
-    if let Some(host) = args.value_of("host") {
+) -> Result<()> {   
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -85,10 +87,7 @@ pub fn info(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -163,10 +162,6 @@ pub fn load(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::io::*;
-    use std::os::unix::process::CommandExt;
-    use std::fs::File;
 
     let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
@@ -174,7 +169,7 @@ pub fn load(
         bail!("No build output available to load");
     };
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let bin = File::open(dst)?;
         let mut cmd = Command::new("ssh");
         unsafe {
@@ -307,6 +302,36 @@ pub fn control(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }          
+        let subcmd = if args.is_present("halt") {
+            cmd.arg("halt");
+        } else if args.is_present("resume") {
+            cmd.arg("resume");
+        } else if args.is_present("reset") {
+            cmd.arg("reset");
+            if cmd_args.is_present("run") {
+                cmd.arg("--run");
+            } else if cmd_args.is_present("halt") {
+                cmd.arg("--halt");
+            } else if cmd_args.is_present("init") {
+                cmd.arg("--init");
+            }        
+        };
+        out.verbose("Remote", &format!("{:?}", cmd))?;
+
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -354,10 +379,7 @@ pub fn openocd(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg("-L").arg("3333:localhost:3333");        
         cmd.arg(host);
@@ -397,10 +419,7 @@ pub fn jlink(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg("-L").arg("3333:localhost:3333");
         cmd.arg(host);
@@ -460,16 +479,13 @@ pub fn gdb(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
     let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
     } else {
         bail!("No build output available for gdb");
     };
 
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("arm-none-eabi-gdb");
         cmd.arg("-ex").arg(format!("target extended-remote :3333"));
         cmd.arg(dst);
@@ -515,10 +531,7 @@ pub fn console(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -560,10 +573,7 @@ pub fn screen(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    use std::process::*;
-    use std::os::unix::process::CommandExt;
-
-    if let Some(host) = args.value_of("host") {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -620,6 +630,21 @@ pub fn itm(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
+        cmd.arg("itm");
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 

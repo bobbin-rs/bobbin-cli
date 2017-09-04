@@ -5,6 +5,8 @@
 extern crate error_chain;
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate serde_derive;
 extern crate toml;
 extern crate sha1;
 extern crate plist;
@@ -21,6 +23,8 @@ extern crate libusb;
 mod app;
 mod cmd;
 mod config;
+mod bobbin_config;
+mod cargo_config;
 mod device;
 mod builder;
 mod loader;

@@ -18,7 +18,7 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
 
     if let Some(t) = cmd_args.value_of("target") {
         dst.push(t)
-    } else if let Some(t) = cfg.default_target() {
+    } else if let Some(t) = cfg.target() {
         dst.push(t)
     } else {
         bail!("No target specified");
@@ -35,16 +35,8 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
         dst.push(name);
     } else if let Some(name) = cmd_args.value_of("bin") {
         dst.push(name);
-    } else if let Some(name) = cfg.default_binary() {
-        let mut tmp = dst.clone();
-        tmp.push(name);
-        if tmp.exists() {            
-            dst = tmp;
-        } else {
-            dst.push("main");
-        }
     } else {
-        bail!("No binary specified");
+        dst.push("main");
     };
     Ok(dst)
 }
@@ -83,6 +75,8 @@ pub fn build_xargo(
         cmd.arg("--features").arg(value);
     }
     if let Some(value) = cmd_args.value_of("target") {
+        cmd.arg("--target").arg(value);
+    } else if let Some(value) = cfg.target() {
         cmd.arg("--target").arg(value);
     }
     out.verbose("xargo", &format!("{:?}", cmd))?;
