@@ -5,7 +5,8 @@ use device::Device;
 
 use std::process::Command;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::env;
 
 use tempfile;
 use Result;
@@ -75,7 +76,38 @@ pub trait Control {
 pub struct OpenOcdDebugger {}
 
 impl OpenOcdDebugger {
-    fn command(
+    fn find_config(&self, device: &Device) -> Option<PathBuf> {
+        let device_id = &device.hash()[..8];            
+
+        // Look in current path
+        let bobbin_openocd = Path::new("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+
+        // Look in .bobbin/<device-id>/
+        let mut bobbin_openocd = PathBuf::from(".bobbin");
+        bobbin_openocd.push(device_id);
+        bobbin_openocd.push("openocd.cfg");
+        if bobbin_openocd.exists() {
+            return Some(bobbin_openocd.into())
+        }
+
+        // Look in ~/.bobbin/<device-id>/
+        if let Some(home) = env::home_dir() {
+            let mut bobbin_openocd = home;
+            bobbin_openocd.push(".bobbin");
+            bobbin_openocd.push(device_id);
+            bobbin_openocd.push("openocd.cfg");
+            if bobbin_openocd.exists() {
+                return Some(bobbin_openocd)
+            }        
+        }
+
+        None
+    }
+
+    pub fn command(
         &self,
         cfg: &Config,
         args: &ArgMatches,
@@ -84,12 +116,12 @@ impl OpenOcdDebugger {
         device: &Device,
         action: &str,
     ) -> Result<()> {
-        if !Path::new("openocd.cfg").exists() {
-            bail!("No openocd.cfg found in current directory");
-        }
-
         let mut cmd = Command::new("openocd");
-        cmd.arg("--file").arg("openocd.cfg");
+        if let Some(openocd_cfg) = self.find_config(device) {
+            cmd.arg("--file").arg(openocd_cfg);
+        } else {
+            bail!("No openocd.cfg file was found.");
+        }                
         cmd.arg("--command").arg(&device.openocd_serial().unwrap());
         cmd.arg("--command").arg("init");
         cmd.arg("--command").arg(action);
@@ -104,6 +136,27 @@ impl OpenOcdDebugger {
         }
         Ok(())
     }
+
+    pub fn run(
+        &self,
+        cfg: &Config,
+        args: &ArgMatches,
+        cmd_args: &ArgMatches,
+        out: &mut Printer,
+        device: &Device,
+    ) -> Result<()> {
+        use std::os::unix::process::CommandExt;
+
+        let mut cmd = Command::new("openocd");
+        if let Some(openocd_cfg) = self.find_config(device) {
+            cmd.arg("--file").arg(openocd_cfg);
+        } else {
+            bail!("No openocd.cfg file was found.");
+        }                
+        cmd.arg("--command").arg(&device.openocd_serial().unwrap());
+        cmd.exec();
+        unreachable!();
+    }    
 }
 
 

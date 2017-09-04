@@ -40,10 +40,16 @@ pub fn list(
     use std::process::*;
     use std::os::unix::process::CommandExt;
     
-    if let Some(remote_host) = cmd_args.value_of("remote") {
+    if let Some(host) = args.value_of("host") {
         let mut cmd = Command::new("ssh");
-        cmd.arg(remote_host);
+        cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
         cmd.arg("list");
         cmd.exec();
         unreachable!()
@@ -81,14 +87,17 @@ pub fn info(
 ) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
-    
-    if let Some(remote_host) = cmd_args.value_of("remote") {
+
+    if let Some(host) = args.value_of("host") {
         let mut cmd = Command::new("ssh");
-        cmd.arg(remote_host);
+        cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(remote_device) = cmd_args.value_of("remote-device") {
-            cmd.arg("--device").arg(remote_device);
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
         }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
         cmd.arg("info");
         cmd.exec();
         unreachable!()
@@ -154,23 +163,46 @@ pub fn load(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::io::*;
+    use std::os::unix::process::CommandExt;
+    use std::fs::File;
+
     let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
         dst
     } else {
         bail!("No build output available to load");
     };
-    out.verbose("target", &format!("{}", dst.display()))?;
 
-    if cmd_args.is_present("remote") {
-        let ldr = loader::RemoteLoader {};
-        ldr.load_remote(
-            cfg,
-            args,
-            cmd_args,
-            out,
-            dst.as_path(),
-        )?;
-        unreachable!()        
+    if let Some(host) = args.value_of("host") {
+        let bin = File::open(dst)?;
+        let mut cmd = Command::new("ssh");
+        unsafe {
+            cmd.stdin(Stdio::from_raw_fd(bin.into_raw_fd()));
+        }
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }          
+        let subcmd = if args.is_present("load") {
+            "load"
+        } else if args.is_present("run") {
+            "run"
+        } else if args.is_present("test") {
+            "test"
+        } else {
+            bail!("Only load, run and test are supported for remote hosts")
+        };
+        cmd.arg(subcmd);
+        cmd.arg("--stdin");
+        out.verbose("Remote", &format!("{:?}", cmd))?;
+
+        cmd.exec();
+        unreachable!()
     }
 
     let filter = device::filter(cfg, args, cmd_args);
@@ -325,6 +357,23 @@ pub fn openocd(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
+    if let Some(host) = args.value_of("host") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg("-L").arg("3333:localhost:3333");        
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
+        cmd.arg("openocd");
+        println!("{:?}", cmd);
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -336,17 +385,9 @@ pub fn openocd(
         devices.remove(0)
     };
 
-    let mut cmd = Command::new("openocd");
-    cmd.arg("--file").arg("openocd.cfg");
-    cmd.arg("--command").arg(&device.openocd_serial().unwrap());
-
-    cmd.exec();
-
-    let status = cmd.status()?;
-    if !status.success() {
-        bail!("openocd failed")
-    }
-    Ok(())
+    let dbg = debugger::OpenOcdDebugger {};
+    dbg.run(cfg, args, cmd_args, out, device.as_ref())?;
+    unreachable!()
 }
 
 
@@ -358,6 +399,22 @@ pub fn jlink(
 ) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
+
+    if let Some(host) = args.value_of("host") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg("-L").arg("3333:localhost:3333");
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
+        cmd.arg("openocd");
+        cmd.exec();
+        unreachable!()
+    }
 
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
@@ -406,6 +463,20 @@ pub fn gdb(
     use std::process::*;
     use std::os::unix::process::CommandExt;
 
+    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
+        dst
+    } else {
+        bail!("No build output available for gdb");
+    };
+
+    if let Some(host) = args.value_of("host") {
+        let mut cmd = Command::new("arm-none-eabi-gdb");
+        cmd.arg("-ex").arg(format!("target extended-remote :3333"));
+        cmd.arg(dst);
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -415,12 +486,6 @@ pub fn gdb(
         bail!("More than one device found ({})", devices.len());
     } else {
         devices.remove(0)
-    };
-
-    let dst = if let Some(dst) = builder::build(cfg, args, cmd_args, out)? {
-        dst
-    } else {
-        bail!("No build output available for gdb");
     };
 
     let mut cmd = Command::new("arm-none-eabi-gdb");
@@ -450,6 +515,24 @@ pub fn console(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
+    use std::process::*;
+    use std::os::unix::process::CommandExt;
+
+    if let Some(host) = args.value_of("host") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
+        cmd.arg("console");
+        cmd.exec();
+        unreachable!()
+    }
+
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
 
@@ -479,6 +562,21 @@ pub fn screen(
 ) -> Result<()> {
     use std::process::*;
     use std::os::unix::process::CommandExt;
+
+    if let Some(host) = args.value_of("host") {
+        let mut cmd = Command::new("ssh");
+        cmd.arg(host);
+        cmd.arg(".cargo/bin/bobbin");
+        if let Some(device) = args.value_of("device") {
+            cmd.arg("--device").arg(device);
+        }        
+        if args.is_present("verbose") {
+            cmd.arg("--verbose");
+        }                
+        cmd.arg("screen");
+        cmd.exec();
+        unreachable!()
+    }
 
     let filter = device::filter(cfg, args, cmd_args);
     let mut devices = device::search(&filter)?;
