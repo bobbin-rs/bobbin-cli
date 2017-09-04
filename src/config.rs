@@ -3,7 +3,6 @@ use cargo_config::CargoConfig;
 use clap::ArgMatches;
 use Result;
 use toml;
-use toml::value::{Value, Table};
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
@@ -13,17 +12,13 @@ pub fn config(args: &ArgMatches) -> Result<Config> {
     Ok(Config {
         bobbin: read_bobbin()?,
         cargo: read_cargo()?,
-        bobbin_cfg: read_bobbin_config()?,
-        cargo_cfg: read_cargo_config()?,
     })
 }
 
 #[derive(Debug)]
 pub struct Config {
-    bobbin: Option<BobbinConfig>,
-    cargo: Option<CargoConfig>,
-    bobbin_cfg: Value,
-    cargo_cfg: Value,
+    pub bobbin: Option<BobbinConfig>,
+    pub cargo: Option<CargoConfig>,
 }
 
 impl Config {
@@ -47,19 +42,16 @@ impl Config {
 
         None
     }
-
-    pub fn default_filter(&self) -> Option<&Value> {
-        self.bobbin_cfg.get("filter")
+    pub fn filter_device(&self) -> Option<&str> {    
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref filter) = bobbin.filter {
+                if let Some(ref device) = filter.device {
+                    return Some(device)
+                }
+            }
+        }
+        None        
     }
-
-    pub fn default_loader(&self) -> Option<&Value> {
-        self.bobbin_cfg.get("loader")
-    }
-
-    pub fn default_itm(&self) -> Option<&Value> {
-        self.bobbin_cfg.get("itm")
-    }
-
     pub fn itm_target_clock(&self) -> Option<u32> {
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref itm) = bobbin.itm {
@@ -104,26 +96,6 @@ impl Config {
     }    
 }
 
-pub fn read_cargo_config() -> Result<Value> {
-    read_toml(Path::new("./.cargo/config"))
-}
-
-pub fn read_bobbin_config() -> Result<Value> {
-    read_toml(Path::new("./.bobbin/config"))
-}
-
-pub fn read_toml<P: AsRef<Path>>(path: P) -> Result<Value> {
-    let path = path.as_ref();
-    if !path.exists() {
-        return Ok(Value::Table(Table::new()));
-    }
-    let mut f = File::open(path)?;
-    let mut data = String::new();
-    f.read_to_string(&mut data)?;
-    let value = data.parse::<Value>()?;
-    Ok(value)
-}
-
 pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Option<String>> {
     let path = path.as_ref();
     if path.exists() {
@@ -137,7 +109,7 @@ pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Option<String>> {
 }
 
 pub fn read_bobbin() -> Result<Option<BobbinConfig>> {    
-    if let Some(s) = read_file("./bobbin/config")? {
+    if let Some(s) = read_file("./.bobbin/config")? {
         Ok(Some(toml::from_str(&s)?))
     } else {
         Ok(None)
@@ -145,7 +117,7 @@ pub fn read_bobbin() -> Result<Option<BobbinConfig>> {
 }
 
 pub fn read_cargo() -> Result<Option<CargoConfig>> {
-    if let Some(s) = read_file("./cargo/config")? {
+    if let Some(s) = read_file("./.cargo/config")? {
         Ok(Some(toml::from_str(&s)?))
     } else {
         Ok(None)
