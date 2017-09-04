@@ -1,45 +1,51 @@
+use bobbin_config::BobbinConfig;
+use cargo_config::CargoConfig;
 use clap::ArgMatches;
 use Result;
+use toml;
 use toml::value::{Value, Table};
 use std::io::Read;
 use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 
-pub fn config(args: &ArgMatches) -> Result<Config> {
+pub fn config(args: &ArgMatches) -> Result<Config> {    
     Ok(Config {
+        bobbin: read_bobbin()?,
+        cargo: read_cargo()?,
         bobbin_cfg: read_bobbin_config()?,
         cargo_cfg: read_cargo_config()?,
-        cargo: read_cargo()?,
     })
 }
 
 #[derive(Debug)]
 pub struct Config {
+    bobbin: Option<BobbinConfig>,
+    cargo: Option<CargoConfig>,
     bobbin_cfg: Value,
     cargo_cfg: Value,
-    cargo: Value,
 }
 
 impl Config {
-    pub fn default_target(&self) -> Option<PathBuf> {
-        if let Some(build) = self.cargo_cfg.get("build") {
-            build.as_table().unwrap()["target"]
-                .as_str()
-                .map(PathBuf::from)
-        } else {
-            None
+    pub fn target(&self) -> Option<&str> {
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref builder) = bobbin.builder {
+                if let Some(ref target) = builder.target {
+                    return Some(target)
+                }
+            }
         }
-    }
 
-    pub fn default_binary(&self) -> Option<PathBuf> {
-        if let Some(package) = self.cargo.get("package") {
-            package.as_table().unwrap()["name"]
-                .as_str()
-                .map(PathBuf::from)
-        } else {
-            None
+        if let Some(ref cargo) = self.cargo {
+            if let Some(ref build) = cargo.build {
+                if let Some(ref target) = build.target {
+                    return Some(target)
+                }
+
+            }
         }
+
+        None
     }
 
     pub fn default_filter(&self) -> Option<&Value> {
@@ -132,10 +138,6 @@ pub fn read_bobbin_config() -> Result<Value> {
     read_toml(Path::new("./.bobbin/config"))
 }
 
-pub fn read_cargo() -> Result<Value> {
-    read_toml(Path::new("./Cargo.toml"))
-}
-
 pub fn read_toml<P: AsRef<Path>>(path: P) -> Result<Value> {
     let path = path.as_ref();
     if !path.exists() {
@@ -146,4 +148,33 @@ pub fn read_toml<P: AsRef<Path>>(path: P) -> Result<Value> {
     f.read_to_string(&mut data)?;
     let value = data.parse::<Value>()?;
     Ok(value)
+}
+
+pub fn read_bobbin() -> Result<Option<BobbinConfig>> {
+    let path = Path::new("./.bobbin/config");
+    if path.exists() {
+        let mut f = File::open(path)?;
+        let mut data = String::new();
+        f.read_to_string(&mut data)?;
+        let config: BobbinConfig = toml::from_str(&data)?;
+        Ok(Some(config))
+       
+    } else {
+        Ok(None)
+    }
+}
+
+
+pub fn read_cargo() -> Result<Option<CargoConfig>> {
+    let path = Path::new("./.cargo/config");
+    if path.exists() {
+        let mut f = File::open(path)?;
+        let mut data = String::new();
+        f.read_to_string(&mut data)?;
+        let config: CargoConfig = toml::from_str(&data)?;
+        Ok(Some(config))
+       
+    } else {
+        Ok(None)
+    }
 }
