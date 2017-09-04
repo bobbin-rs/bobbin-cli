@@ -467,7 +467,7 @@ pub fn jlink(
 
     let status = cmd.status()?;
     if !status.success() {
-        bail!("openocd failed")
+        bail!("jlink failed")
     }
     Ok(())
 }
