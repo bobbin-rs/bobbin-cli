@@ -5,9 +5,9 @@ use printer::Printer;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::process::*;
-use std::os::unix::io::*;
+// use std::os::unix::io::*;
 use std::os::unix::process::CommandExt;
-use std::fs::File;
+// use std::fs::File;
 
 use device;
 use builder;
@@ -44,6 +44,8 @@ pub fn list(
 ) -> Result<()> {   
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -89,6 +91,8 @@ pub fn info(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -170,11 +174,17 @@ pub fn load(
     };
 
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
-        let bin = File::open(dst)?;
-        let mut cmd = Command::new("ssh");
-        unsafe {
-            cmd.stdin(Stdio::from_raw_fd(bin.into_raw_fd()));
+        let mut cmd = Command::new("rsync");
+        cmd.arg(dst.clone());
+        let device = args.value_of("device").or_else(|| cfg.filter_device()).unwrap_or_else(|| "bobbin");
+        cmd.arg(format!("{}:/tmp/{}/", host, device));
+        let status = cmd.status()?;
+        if !status.success() {
+            bail!("Unable to transfer file to {}", host);
         }
+        let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -193,7 +203,7 @@ pub fn load(
             bail!("Only load, run and test are supported for remote hosts")
         };
         cmd.arg(subcmd);
-        cmd.arg("--stdin");
+        cmd.arg(format!("/tmp/{}/{}", device, dst.file_name().unwrap().to_str().unwrap()));
         out.verbose("Remote", &format!("{:?}", cmd))?;
 
         cmd.exec();
@@ -304,6 +314,8 @@ pub fn control(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -381,6 +393,8 @@ pub fn openocd(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg("-L").arg("3333:localhost:3333");        
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -421,6 +435,8 @@ pub fn jlink(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg("-L").arg("3333:localhost:3333");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
@@ -533,6 +549,8 @@ pub fn console(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -575,6 +593,8 @@ pub fn screen(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {
@@ -632,6 +652,8 @@ pub fn itm(
 ) -> Result<()> {
     if let Some(host) = args.value_of("host").or_else(|| cfg.filter_host()) {
         let mut cmd = Command::new("ssh");
+        cmd.arg("-q");
+        cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
         if let Some(device) = args.value_of("device") {

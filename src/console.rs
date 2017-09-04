@@ -44,7 +44,7 @@ impl Console {
             loop {
                 match stdin.read(&mut byte) {
                     Ok(0) => {
-                        process::exit(0)
+                        // process::exit(0)
                     },
                     Ok(_) => {},
                     Err(_) => {
