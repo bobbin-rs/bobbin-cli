@@ -61,72 +61,46 @@ impl Config {
     }
 
     pub fn itm_target_clock(&self) -> Option<u32> {
-        if let Some(default_itm) = self.default_itm() {
-            if let Some(default_itm) = default_itm.as_table() {
-                if let Some(target_clock) = default_itm.get("target-clock") {
-                    if let Some(target_clock) = target_clock.as_integer() {
-                        Some(target_clock as u32)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            } else {
-                None
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref itm) = bobbin.itm {
+                return itm.target_clock
             }
-        } else {
-            None
         }
+        None        
     }
 
     pub fn jlink_device(&self) -> Option<&str> {
-        if let Some(default_loader) = self.default_loader() {
-            if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(jlink_device) = ldr_cfg.get("jlink-device") {
-                    jlink_device.as_str()
-                } else {
-                    None
-                }   
-            } else {
-                None
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref loader) = bobbin.loader {
+                if let Some(ref jlink_device) = loader.jlink_device {
+                    return Some(jlink_device)
+                }
             }
-        } else {
-            None
         }
+        None
     }    
 
     pub fn teensy_mcu(&self) -> Option<&str> {
-        if let Some(default_loader) = self.default_loader() {
-            if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(teensy_mcu) = ldr_cfg.get("teensy-mcu") {
-                    teensy_mcu.as_str()
-                } else {
-                    None
-                }   
-            } else {
-                None
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref loader) = bobbin.loader {
+                if let Some(ref teensy_mcu) = loader.teensy_mcu {
+                    return Some(teensy_mcu)
+                }
             }
-        } else {
-            None
         }
+        None        
     }
 
 
     pub fn blackmagic_mode(&self) -> Option<&str> {
-        if let Some(default_loader) = self.default_loader() {
-            if let Some(ldr_cfg) = default_loader.as_table() {
-                if let Some(blackmagic_mode) = ldr_cfg.get("blackmagic-mode") {
-                    blackmagic_mode.as_str()
-                } else {
-                    None
-                }   
-            } else {
-                None
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref loader) = bobbin.loader {
+                if let Some(ref blackmagic_mode) = loader.blackmagic_mode {
+                    return Some(blackmagic_mode)
+                }
             }
-        } else {
-            None
         }
+        None
     }    
 }
 
@@ -150,30 +124,29 @@ pub fn read_toml<P: AsRef<Path>>(path: P) -> Result<Value> {
     Ok(value)
 }
 
-pub fn read_bobbin() -> Result<Option<BobbinConfig>> {
-    let path = Path::new("./.bobbin/config");
+pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Option<String>> {
+    let path = path.as_ref();
     if path.exists() {
-        let mut f = File::open(path)?;
         let mut data = String::new();
-        f.read_to_string(&mut data)?;
-        let config: BobbinConfig = toml::from_str(&data)?;
-        Ok(Some(config))
-       
+        let mut file = File::open(path)?;
+        file.read_to_string(&mut data)?;
+        Ok(Some(data))
     } else {
         Ok(None)
     }
 }
 
+pub fn read_bobbin() -> Result<Option<BobbinConfig>> {    
+    if let Some(s) = read_file("./bobbin/config")? {
+        Ok(Some(toml::from_str(&s)?))
+    } else {
+        Ok(None)
+    }
+}
 
 pub fn read_cargo() -> Result<Option<CargoConfig>> {
-    let path = Path::new("./.cargo/config");
-    if path.exists() {
-        let mut f = File::open(path)?;
-        let mut data = String::new();
-        f.read_to_string(&mut data)?;
-        let config: CargoConfig = toml::from_str(&data)?;
-        Ok(Some(config))
-       
+    if let Some(s) = read_file("./cargo/config")? {
+        Ok(Some(toml::from_str(&s)?))
     } else {
         Ok(None)
     }
