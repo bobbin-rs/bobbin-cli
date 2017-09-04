@@ -430,7 +430,7 @@ pub fn jlink(
         if args.is_present("verbose") {
             cmd.arg("--verbose");
         }                
-        cmd.arg("openocd");
+        cmd.arg("jlink");
         cmd.exec();
         unreachable!()
     }
