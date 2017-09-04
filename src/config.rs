@@ -38,7 +38,17 @@ impl Config {
                 }
 
             }
+
+            if let Some(ref target) = cargo.target {
+                if target.keys().len() == 1 {
+                    for key in target.keys() {
+                        return Some(key)
+                    }
+                }
+            }
         }
+
+        
 
         None
     }
