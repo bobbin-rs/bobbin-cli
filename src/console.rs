@@ -3,6 +3,7 @@ use clap::ArgMatches;
 use std::time::{Duration, Instant};
 use std::io::{Read, Write};
 use std::process;
+use std::thread::spawn;
 
 use Result;
 
@@ -34,13 +35,29 @@ impl Console {
     }
 
     pub fn view(&mut self) -> Result<()> {
-        self.port.set_timeout(Duration::from_millis(1000))?;
+        self.port.set_timeout(Duration::from_millis(100))?;
         let mut buf = [0u8; 1024];
-        let mut out = ::std::io::stdout();
+        let mut stdin = ::std::io::stdin();
+        let mut stdout = ::std::io::stdout();
+        spawn(move || {
+            let mut byte = [0u8];
+            loop {
+                match stdin.read(&mut byte) {
+                    Ok(0) => {
+                        process::exit(0)
+                    },
+                    Ok(_) => {},
+                    Err(_) => {
+                        process::exit(1)
+                    }
+                }
+
+            }
+        });
         loop {
             match self.port.read(&mut buf[..]) {
                 Ok(n) => {
-                    try!(out.write(&buf[..n]));
+                    try!(stdout.write(&buf[..n]));
                 }
                 Err(_) => {}
             }
