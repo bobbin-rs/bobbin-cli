@@ -142,9 +142,7 @@ impl Load for JLinkLoader {
         dst.set_extension("hex");
         objcopy("ihex", target, &dst)?;
 
-        let jlink_dev = if let Some(jlink_dev) = cmd_args.value_of("jlink-device") {
-            jlink_dev
-        } else if let Some(jlink_dev) = cfg.jlink_device() {
+        let jlink_dev = if let Some(jlink_dev) = cfg.jlink_device(cmd_args) {
             jlink_dev
         } else {
             bail!("JLink Loader requires that --jlink-device is specified");
@@ -257,9 +255,7 @@ impl Load for TeensyLoader {
 
         // Execute Command
 
-        let teensy_mcu = if let Some(teensy_mcu) = cmd_args.value_of("teensy-mcu") {
-            teensy_mcu
-        } else if let Some(teensy_mcu) = cfg.teensy_mcu() {
+        let teensy_mcu = if let Some(teensy_mcu) = cfg.teensy_mcu(cmd_args) {
             teensy_mcu
         } else {
             bail!("Teensy Loader requires that --teensy-mcu is specified. Try 'teensy_loader_cli --list-mcus'.");

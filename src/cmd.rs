@@ -48,7 +48,7 @@ pub fn list(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -95,7 +95,7 @@ pub fn info(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -187,7 +187,7 @@ pub fn load(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -203,6 +203,19 @@ pub fn load(
             bail!("Only load, run and test are supported for remote hosts")
         };
         cmd.arg(subcmd);
+
+        if let Some(arg) = cfg.jlink_device(args) {
+            cmd.arg("--jlink-device").arg(arg);
+        }
+
+        if let Some(arg) = cfg.teensy_mcu(args) {
+            cmd.arg("--teensy-mcu").arg(arg);
+        }
+
+        if let Some(arg) = cfg.blackmagic_mode(args) {
+            cmd.arg("--blackmagic_mode").arg(arg);
+        }
+
         cmd.arg(format!("/tmp/{}/{}", device, dst.file_name().unwrap().to_str().unwrap()));
         out.verbose("Remote", &format!("{:?}", cmd))?;
 
@@ -318,7 +331,7 @@ pub fn control(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -398,7 +411,7 @@ pub fn openocd(
         cmd.arg("-L").arg("3333:localhost:3333");        
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -440,7 +453,7 @@ pub fn jlink(
         cmd.arg("-L").arg("3333:localhost:3333");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -462,9 +475,7 @@ pub fn jlink(
         devices.remove(0)
     };
 
-    let jlink_dev = if let Some(jlink_dev) = cmd_args.value_of("jlink-device") {
-        jlink_dev
-    } else if let Some(jlink_dev) = cfg.jlink_device() {
+    let jlink_dev = if let Some(jlink_dev) = cfg.jlink_device(cmd_args) {
         jlink_dev
     } else {
         bail!("JLink Loader requires that --jlink-device is specified");
@@ -553,7 +564,7 @@ pub fn console(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -597,7 +608,7 @@ pub fn screen(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {
@@ -656,7 +667,7 @@ pub fn itm(
         cmd.arg("-t");
         cmd.arg(host);
         cmd.arg(".cargo/bin/bobbin");
-        if let Some(device) = args.value_of("device") {
+        if let Some(device) = cfg.device(args) {
             cmd.arg("--device").arg(device);
         }        
         if args.is_present("verbose") {

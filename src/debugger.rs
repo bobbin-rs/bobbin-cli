@@ -251,9 +251,7 @@ impl JLinkDebugger {
         action: &str,
     ) -> Result<()> {
 
-        let jlink_dev = if let Some(jlink_dev) = cmd_args.value_of("jlink-device") {
-            jlink_dev
-        } else if let Some(jlink_dev) = cfg.jlink_device() {
+        let jlink_dev = if let Some(jlink_dev) = cfg.jlink_device(cmd_args) {
             jlink_dev
         } else {
             bail!("JLink Loader requires that --jlink-device is specified");

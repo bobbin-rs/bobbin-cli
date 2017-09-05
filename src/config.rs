@@ -64,6 +64,10 @@ impl Config {
         None        
     }
 
+    pub fn device(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("device").or_else(|| self.filter_device()).map(String::from)
+    }
+
     pub fn filter_device(&self) -> Option<&str> {    
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref filter) = bobbin.filter {
@@ -84,7 +88,11 @@ impl Config {
         None        
     }
 
-    pub fn jlink_device(&self) -> Option<&str> {
+    pub fn jlink_device(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("jlink-device").or_else(|| self.cfg_jlink_device()).map(String::from)
+    }
+
+    pub fn cfg_jlink_device(&self) -> Option<&str> {        
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref loader) = bobbin.loader {
                 if let Some(ref jlink_device) = loader.jlink_device {
@@ -95,7 +103,11 @@ impl Config {
         None
     }    
 
-    pub fn teensy_mcu(&self) -> Option<&str> {
+    pub fn teensy_mcu(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("teensy-mcu").or_else(|| self.cfg_teensy_mcu()).map(String::from)
+    }
+
+    pub fn cfg_teensy_mcu(&self) -> Option<&str> {
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref loader) = bobbin.loader {
                 if let Some(ref teensy_mcu) = loader.teensy_mcu {
@@ -106,8 +118,11 @@ impl Config {
         None        
     }
 
+    pub fn blackmagic_mode(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("blackmagic_mode").or_else(|| self.cfg_blackmagic_mode()).map(String::from)
+    }
 
-    pub fn blackmagic_mode(&self) -> Option<&str> {
+    pub fn cfg_blackmagic_mode(&self) -> Option<&str> {
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref loader) = bobbin.loader {
                 if let Some(ref blackmagic_mode) = loader.blackmagic_mode {
