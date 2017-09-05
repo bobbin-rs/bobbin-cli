@@ -79,6 +79,21 @@ impl Config {
         None        
     }
 
+    pub fn console(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("console").or_else(|| self.cfg_console()).map(String::from)
+    }
+
+    pub fn cfg_console(&self) -> Option<&str> {    
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref console) = bobbin.console {
+                if let Some(ref path) = console.path {
+                    return Some(path)
+                }
+            }
+        }
+        None        
+    }
+
     pub fn itm_target_clock(&self) -> Option<u32> {
         if let Some(ref bobbin) = self.bobbin {
             if let Some(ref itm) = bobbin.itm {

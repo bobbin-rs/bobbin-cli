@@ -204,16 +204,20 @@ pub fn load(
         };
         cmd.arg(subcmd);
 
-        if let Some(arg) = cfg.jlink_device(args) {
+        if let Some(arg) = cfg.jlink_device(cmd_args) {
             cmd.arg("--jlink-device").arg(arg);
         }
 
-        if let Some(arg) = cfg.teensy_mcu(args) {
+        if let Some(arg) = cfg.teensy_mcu(cmd_args) {
             cmd.arg("--teensy-mcu").arg(arg);
         }
 
-        if let Some(arg) = cfg.blackmagic_mode(args) {
+        if let Some(arg) = cfg.blackmagic_mode(cmd_args) {
             cmd.arg("--blackmagic_mode").arg(arg);
+        }
+
+        if let Some(arg) = cfg.console(cmd_args) {
+            cmd.arg("--console").arg(arg);
         }
 
         cmd.arg(format!("/tmp/{}/{}", device, dst.file_name().unwrap().to_str().unwrap()));
@@ -247,7 +251,11 @@ pub fn load(
 
     let con = if !cmd_args.is_present("noconsole") && !cmd_args.is_present("itm") {
         if args.is_present("run") || args.is_present("test") {
-            if let Some(cdc_path) = device.cdc_path() {
+            if let Some(cdc_path) = cfg.console(cmd_args) {
+                let mut con = console::open(&cdc_path)?;
+                con.clear()?;
+                Some(con)
+            } else if let Some(cdc_path) = device.cdc_path() {
                 let mut con = console::open(&cdc_path)?;
                 con.clear()?;
                 Some(con)
@@ -351,6 +359,22 @@ pub fn control(
                 cmd.arg("--init");
             }        
         };
+
+        if let Some(arg) = cfg.jlink_device(cmd_args) {
+            cmd.arg("--jlink-device").arg(arg);
+        }
+
+        if let Some(arg) = cfg.teensy_mcu(cmd_args) {
+            cmd.arg("--teensy-mcu").arg(arg);
+        }
+
+        if let Some(arg) = cfg.blackmagic_mode(cmd_args) {
+            cmd.arg("--blackmagic_mode").arg(arg);
+        }
+
+        if let Some(arg) = cfg.console(cmd_args) {
+            cmd.arg("--console").arg(arg);
+        }        
         out.verbose("Remote", &format!("{:?}", cmd))?;
 
         cmd.exec();
@@ -460,6 +484,9 @@ pub fn jlink(
             cmd.arg("--verbose");
         }                
         cmd.arg("jlink");
+        if let Some(arg) = cfg.jlink_device(cmd_args) {
+            cmd.arg("--jlink-device").arg(arg);
+        }        
         cmd.exec();
         unreachable!()
     }
@@ -571,6 +598,9 @@ pub fn console(
             cmd.arg("--verbose");
         }                
         cmd.arg("console");
+        if let Some(arg) = cfg.console(cmd_args) {
+            cmd.arg("--console").arg(arg);
+        }                
         cmd.exec();
         unreachable!()
     }
@@ -586,7 +616,10 @@ pub fn console(
         devices.remove(0)
     };
 
-    if let Some(cdc_path) = device.cdc_path() {
+    if let Some(cdc_path) = cfg.console(cmd_args) {
+        let mut con = console::open(&cdc_path)?;
+        con.view()?
+    } else if let Some(cdc_path) = device.cdc_path() {
         let mut con = console::open(&cdc_path)?;
         con.view()?
     } else {
@@ -615,6 +648,9 @@ pub fn screen(
             cmd.arg("--verbose");
         }                
         cmd.arg("screen");
+        if let Some(arg) = cfg.console(cmd_args) {
+            cmd.arg("--console").arg(arg);
+        }                
         cmd.exec();
         unreachable!()
     }
@@ -631,7 +667,9 @@ pub fn screen(
     };
 
     let mut cmd = Command::new("screen");
-    if let Some(cdc_path) = device.cdc_path() {
+    if let Some(cdc_path) = cfg.console(cmd_args) {
+        cmd.arg(cdc_path);
+    } else if let Some(cdc_path) = device.cdc_path() {
         cmd.arg(cdc_path);
     } else {
         bail!("No serial device path found");
