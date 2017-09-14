@@ -1,0 +1,7 @@
+0.9.0:
+   Added console options to configuation file
+   Infer --target by reading .cargo/configuration   
+   Rewrite to use Serde to read configuration files
+   Add support for remote operations using SSH
+   Also search for openocd.cfg in .bobbin/<device-id>/ and ~/.bobbin/<device-id>/
+   Use -mmcu instead of --mcu option for teensy_loader_cli compatibility

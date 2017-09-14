@@ -336,15 +336,18 @@ of 115,200.
 that are GDB native, this command will connect directly to the device; for debug probes using
 OpenOCD or JLinkGDBServer, you must use `target remote :3333` manually or in a .gdbinit file.
 
-### Using Make instead of Xargo
+### Specifying Binary Targets
 
 If you are not using xargo / cargo as your build manager, you have the option of specifying the output binary
-path using --binary. You can also use Make as your build manager by using the --make parameter followed by
-optional make targets. For instance:
+path as the first unlabeled argument. For instance:
 
-$ bobbin run --make blinky --binary build/blinky.elf
+$ bobbin run build/blinky.elf
 
-would execute "make blinky" and then continue on success, using build/blinky.elf as the output binary.
+would use build/blinky.elf as the target binary to run.
+
+$ bobbin test build/blinky.elf
+
+would load and test build/blinky.elf 
 
 ## Configuration
 
