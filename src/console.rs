@@ -39,14 +39,19 @@ impl Console {
         let mut buf = [0u8; 1024];
         let mut stdin = ::std::io::stdin();
         let mut stdout = ::std::io::stdout();
+
+        let (stdin_tx, stdin_rx) = ::std::sync::mpsc::channel();  
+        
         spawn(move || {
-            let mut byte = [0u8];
             loop {
-                match stdin.read(&mut byte) {
+                let mut stdin_input = String::new();
+                match stdin.read_line(&mut stdin_input) {
                     Ok(0) => {
                         // process::exit(0)
                     },
-                    Ok(_) => {},
+                    Ok(_) => {
+                        stdin_tx.send(stdin_input);
+                    },
                     Err(_) => {
                         process::exit(1)
                     }
@@ -54,12 +59,19 @@ impl Console {
 
             }
         });
+        
         loop {
             match self.port.read(&mut buf[..]) {
                 Ok(n) => {
                     try!(stdout.write(&buf[..n]));
                 }
                 Err(_) => {}
+            }
+            match stdin_rx.try_recv() {
+                Ok(s) => {
+                    self.port.write(s.as_bytes());
+                },
+                Err(_) => {},
             }
         }
         //Ok(())
