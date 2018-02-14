@@ -37,7 +37,7 @@ impl Console {
     pub fn view(&mut self) -> Result<()> {
         self.port.set_timeout(Duration::from_millis(100))?;
         let mut buf = [0u8; 1024];
-        let mut stdin = ::std::io::stdin();
+        let stdin = ::std::io::stdin();
         let mut stdout = ::std::io::stdout();
 
         let (stdin_tx, stdin_rx) = ::std::sync::mpsc::channel();  
@@ -50,7 +50,7 @@ impl Console {
                         // process::exit(0)
                     },
                     Ok(_) => {
-                        stdin_tx.send(stdin_input);
+                        let _ = stdin_tx.send(stdin_input);
                     },
                     Err(_) => {
                         process::exit(1)
@@ -69,7 +69,7 @@ impl Console {
             }
             match stdin_rx.try_recv() {
                 Ok(s) => {
-                    self.port.write(s.as_bytes());
+                    self.port.write(s.as_bytes())?;
                 },
                 Err(_) => {},
             }
