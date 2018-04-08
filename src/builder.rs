@@ -58,8 +58,12 @@ pub fn build_xargo(
     args: &ArgMatches,
     cmd_args: &ArgMatches,
     out: &mut Printer,
-) -> Result<Option<PathBuf>> {
-    let mut cmd = Command::new("xargo");
+) -> Result<Option<PathBuf>> {    
+    let (mut cmd, cmd_name) = if cmd_args.is_present("xargo") { 
+        (Command::new("xargo"), "xargo")
+    } else {
+        (Command::new("cargo"), "cargo")
+    };
     cmd.arg("build");
 
     if let Some(name) = cmd_args.value_of("example") {
@@ -79,9 +83,9 @@ pub fn build_xargo(
     } else if let Some(value) = cfg.target() {
         cmd.arg("--target").arg(value);
     }
-    out.verbose("xargo", &format!("{:?}", cmd))?;
+    out.verbose(cmd_name, &format!("{:?}", cmd))?;
     if !cmd.status()?.success() {
-        bail!("xargo build failed");
+        bail!("build failed");
     }
     let dst = build_path(cfg, args, cmd_args)?;
     if dst.is_file() {

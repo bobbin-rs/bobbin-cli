@@ -4,7 +4,7 @@ const ABOUT: &'static str = "
 bobbin-cli (bobbin) is a command line tool for automating your embedded development workflow.
 
 bobbin-cli (bobbin) is a tool designed to make it easy to build, deploy, test and debug embedded
-devices using a unified CLI. bobbin-cli understands Rust's cargo / xargo package managers
+devices using a unified CLI. bobbin-cli understands Rust's cargo / cargo package managers
 but can also work with Make or any other build system.
 
 bobbin-cli has the following main areas of functionality:
@@ -13,7 +13,7 @@ bobbin-cli has the following main areas of functionality:
    and allows you to set per-project filters so that it knows which device to use even when
    multiple devices are connected to your computer.
 
--  Build management. bobbin-cli automatically uses xargo to build your project, and reads the
+-  Build management. bobbin-cli automatically uses cargo to build your project, and reads the
    command line parameters and your Cargo.toml file to automatically determine the output binary
    to use. 
 
@@ -72,7 +72,7 @@ $ cat .bobbin/config
 device = \"c2f3dc42\"
 
 To build and run a Rust embedded application, simply use \"bobbin run\" with optional--target, --bin,
---example and --release parameters, just as you would use xargo or xargo directly. bobbin-cli will
+--example and --release parameters, just as you would use cargo or cargo directly. bobbin-cli will
 use these parameters as well as the local .cargo/config and Cargo.toml file to determine the path of
 the output file. It will then execute the appropriate flash loader application for your device (OpenOCD,
 JLinkExe, bossac or teensy_loader_cli), using objcopy as needed to convert to the required format.
@@ -116,21 +116,23 @@ pub fn app() -> App<'static, 'static> {
         )
         
         .subcommand(SubCommand::with_name("build")
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to xargo"))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
-            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
-            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to cargo"))
+            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to cargo"))
+            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to cargo"))
+            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to cargo"))
+            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo instead of cargo"))
             .about("Build an application")
         )
         .subcommand(SubCommand::with_name("load")
             .arg(Arg::with_name("binary").index(1).takes_value(true).help("Specify the path of the binary file to load."))
             .arg(Arg::with_name("stdin").long("stdin").help("Read binary from stdin"))
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to xargo"))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
-            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
-            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to cargo"))
+            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to cargo"))
+            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to cargo"))
+            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to cargo"))
+            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo instead of cargo"))
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))
@@ -140,11 +142,12 @@ pub fn app() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("run")
             .arg(Arg::with_name("binary").index(1).takes_value(true).help("Specify the path of the binary file to load."))
             .arg(Arg::with_name("stdin").long("stdin").help("Read binary from stdin"))
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to xargo"))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
-            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
-            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --target parameter to cargo"))
+            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to cargo"))
+            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to cargo"))
+            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to cargo"))
+            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo instead of cargo"))
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))                
@@ -167,11 +170,12 @@ pub fn app() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("test")
             .arg(Arg::with_name("binary").index(1).takes_value(true).help("Specify the path of the binary file to load."))
             .arg(Arg::with_name("stdin").long("stdin").help("Read binary from stdin"))
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
-            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
-            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to xargo"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to cargo"))
+            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to cargo"))
+            .arg(Arg::with_name("features").long("features").takes_value(true).help("Pass a --features parameter to cargo"))
+            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo instead of cargo"))
             .arg(Arg::with_name("jlink-device").long("jlink-device").takes_value(true).help("Specify the J-Link device identifier"))
             .arg(Arg::with_name("teensy-mcu").long("teensy-mcu").takes_value(true).help("Specify the Teensy MCU identifier"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))                
@@ -261,12 +265,12 @@ pub fn app() -> App<'static, 'static> {
         )        
         .subcommand(SubCommand::with_name("gdb")
             .arg(Arg::with_name("binary").index(1).takes_value(true).help("Specify the path of the binary file to load."))
-            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to xargo"))
-            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to xargo"))
-            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to xargo"))
-            .arg(Arg::with_name("features").long("features").takes_value(true).takes_value(true).help("Pass a --features parameter to xargo"))
-            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo for the build"))
+            .arg(Arg::with_name("target").long("target").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("bin").long("bin").takes_value(true).help("Pass a --bin parameter to cargo"))
+            .arg(Arg::with_name("example").long("example").takes_value(true).help("Pass a --example parameter to cargo"))
+            .arg(Arg::with_name("release").long("release").help("Pass a --release parameter to cargo"))
+            .arg(Arg::with_name("features").long("features").takes_value(true).takes_value(true).help("Pass a --features parameter to cargo"))
+            .arg(Arg::with_name("xargo").long("xargo").help("Use xargo instead of cargo"))
             .arg(Arg::with_name("blackmagic-mode").long("blackmagic-mode").takes_value(true).help("Specify the Black Magic mode (swd or jtag)"))
             .arg(Arg::with_name("no-build").long("no-build").help("Don't build before attempting to load."))
             .about("Start gdb using the build output as the target.")
