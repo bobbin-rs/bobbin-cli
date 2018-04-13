@@ -156,7 +156,7 @@ pub fn build(
     cmd_args: &ArgMatches,
     out: &mut Printer,
 ) -> Result<()> {
-    let dst = builder::build(cfg, args, args, out)?;
+    let dst = builder::build(cfg, args, cmd_args, out)?;
     Ok(())
 }
 
