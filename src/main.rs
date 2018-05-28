@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_variables, unused_doc_comment)]
+#![allow(dead_code, unused_variables, unused_doc_comments)]
 #![recursion_limit = "1024"]
 
 #[macro_use]
