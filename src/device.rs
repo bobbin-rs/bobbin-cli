@@ -479,6 +479,16 @@ pub struct TeensyDevice {
     usb: UsbDevice,
 }
 
+fn os_version_match(required_version: &str) -> bool {
+    let os = os_type::current_platform();
+    let os_version = semver::Version::parse(&os.version).unwrap();
+
+    let ver_str = ">= ".to_string() + required_version;
+    let r = semver::VersionReq::parse(&ver_str).unwrap();
+
+    r.matches(&os_version)
+}
+
 impl Device for TeensyDevice {
     fn usb(&self) -> &UsbDevice {
         &self.usb
@@ -534,9 +544,17 @@ impl Device for BlackMagicDevice {
 
     #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
-        let serial_len = self.usb.serial_number.len();
-        Some(format!("/dev/cu.usbmodem{}3", &self.usb.serial_number[..serial_len  - 1]))
-    }    
+
+        // Since Macos 10.14 the usbmodem serial number behaviour has changed
+        // instead of replacing the last character with 1 or 3, it is actually
+        // added after the last character
+        if os_version_match("10.14") {
+            Some(format!("/dev/cu.usbmodem{}3", &self.usb.serial_number))
+        } else {
+            let serial_len = self.usb.serial_number.len();
+            Some(format!("/dev/cu.usbmodem{}3", &self.usb.serial_number[..serial_len  - 1]))
+        }
+    }
 
     #[cfg(target_os = "linux")]
     fn cdc_path(&self) -> Option<String> {
@@ -546,12 +564,20 @@ impl Device for BlackMagicDevice {
             None
         }
     }
-    
+
     #[cfg(target_os = "macos")]
     fn gdb_path(&self) -> Option<String> {
-        let serial_len = self.usb.serial_number.len();
-        Some(format!("/dev/cu.usbmodem{}1", &self.usb.serial_number[..serial_len  - 1]))
-    }        
+
+        // Since Macos 10.14 the cu.usbmodem serial number behaviour has changed
+        // instead of replacing the last character with 1 or 3, it is actually
+        // added after the last character
+        if os_version_match("10.14") {
+            Some(format!("/dev/cu.usbmodem{}1", &self.usb.serial_number))
+        } else {
+            let serial_len = self.usb.serial_number.len();
+            Some(format!("/dev/cu.usbmodem{}1", &self.usb.serial_number[..serial_len  - 1]))
+        }
+    }
 
     #[cfg(target_os = "linux")]
     fn gdb_path(&self) -> Option<String> {

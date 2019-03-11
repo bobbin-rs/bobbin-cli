@@ -14,6 +14,8 @@ extern crate serial;
 extern crate termcolor;
 extern crate tempfile;
 extern crate regex;
+extern crate os_type;
+extern crate semver;
 
 #[cfg(feature = "stlink")]
 extern crate byteorder;
