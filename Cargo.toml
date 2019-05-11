@@ -1,6 +1,6 @@
 [package]
 name = "bobbin-cli"
-version = "0.8.5"
+version = "0.8.6"
 authors = ["Jonathan Soo <jcsoo@agora.com>"]
 description = "A command line tool for automating your embedded development workflow."
 homepage = "https://github.com/bobbin-rs/bobbin-cli/"
