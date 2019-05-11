@@ -117,7 +117,7 @@ impl Device for JLinkDevice {
     #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
         let path = format!("/dev/cu.usbmodem{}{}",
-            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
             1,
         );
         if Path::new(&path).exists() {
@@ -243,11 +243,11 @@ impl Device for StLinkV21Device {
     }
 
     #[cfg(target_os = "macos")]
-    fn cdc_path(&self) -> Option<String> {
+    fn cdc_path(&self) -> Option<String> {       
         Some(format!("/dev/cu.usbmodem{}{}",
-            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
             3,
-        ))
+        ))            
     }
 
     #[cfg(target_os = "linux")]
@@ -361,7 +361,7 @@ impl Device for CmsisDapDevice {
     #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}",
-            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
             2,
         ))
     }
@@ -405,7 +405,7 @@ impl Device for DapLinkDevice {
     #[cfg(target_os = "macos")]
     fn cdc_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}",
-            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
             2,
         ))
     }
@@ -469,7 +469,7 @@ impl Device for FeatherDevice {
     #[cfg(target_os = "macos")]
     fn bossa_path(&self) -> Option<String> {
         Some(format!("/dev/cu.usbmodem{}{}",
-            format!("{:x}", self.usb.location_id.unwrap_or(0)).replace("0",""),
+            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
             1,
         ))
     }
