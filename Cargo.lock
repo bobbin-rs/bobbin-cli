@@ -71,7 +71,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "bobbin-cli"
-version = "0.8.6"
+version = "0.8.7"
 dependencies = [
  "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.24.1 (registry+https://github.com/rust-lang/crates.io-index)",
