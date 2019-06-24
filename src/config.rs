@@ -147,6 +147,21 @@ impl Config {
         }
         None
     }    
+
+    pub fn offset(&self, args: &ArgMatches) -> Option<String> {
+        args.value_of("offset").or_else(|| self.cfg_offset()).map(String::from)
+    }
+
+    pub fn cfg_offset(&self) -> Option<&str> {
+        if let Some(ref bobbin) = self.bobbin {
+            if let Some(ref loader) = bobbin.loader {
+                if let Some(ref offset) = loader.offset {
+                    return Some(offset)
+                }
+            }
+        }
+        None
+    }    
 }
 
 pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Option<String>> {
