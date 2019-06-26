@@ -41,5 +41,5 @@ pub struct LoaderConfig {
     pub teensy_mcu: Option<String>,
     #[serde(rename = "blackmagic-mode")]
     pub blackmagic_mode: Option<String>,
-    
+    pub offset: Option<String>,
 }

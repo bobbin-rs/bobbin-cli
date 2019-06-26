@@ -698,10 +698,6 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x1366, 0x0105) => Box::new(JLinkDevice { usb: usb }),
         (0x1cbe, 0x00fd) => Box::new(TiIcdiDevice { usb: usb }),
         (0x0451, 0xbef3) => Box::new(Xds110Device { usb: usb }),
-        (0x239a, 0x801b) => Box::new(FeatherDevice { usb: usb }),
-        (0x239a, 0x800b) => Box::new(FeatherDevice { usb: usb }),
-        (0x239a, 0x001b) => Box::new(FeatherDevice { usb: usb }),
-        (0x239a, 0x000b) => Box::new(FeatherDevice { usb: usb }),
         (0x16c0, 0x0486) => Box::new(TeensyDevice { usb: usb }),
         (0x16c0, 0x0478) => Box::new(TeensyDevice { usb: usb }),
         (0x0483, 0xdf11) => Box::new(Stm32Device { usb: usb }),
@@ -709,6 +705,9 @@ pub fn lookup(usb: UsbDevice) -> Box<Device> {
         (0x15ba, 0x002a) => Box::new(OlimexDevice { usb: usb }),
         // Vendor Prefix Only
         (0x1366, _) => Box::new(JLinkDevice { usb: usb }),        
+        // Assume all Adafruit devices are FeatherDevices, which use
+        // the BOSSA loader.
+        (0x239a, _) => Box::new(FeatherDevice { usb: usb }),
         _ => Box::new(UnknownDevice { usb: usb }),
     }
 }

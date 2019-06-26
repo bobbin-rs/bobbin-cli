@@ -216,8 +216,13 @@ impl Load for BossaLoader {
         let mut cmd = Command::new("bossac");
         cmd.arg("-eivRw")
             .arg("-p")
-            .arg(device.bossa_path().unwrap())
-            .arg(dst);
+            .arg(device.bossa_path().unwrap());
+
+        if let Some(offset) = cfg.offset(cmd_args) {
+            cmd.arg("-o").arg(offset);
+        }
+
+        cmd.arg(dst);
 
         let status = if out.is_verbose() {
             cmd.status()?

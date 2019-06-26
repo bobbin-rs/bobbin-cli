@@ -65,7 +65,7 @@ a variant supporting OpenOCD (CMSIS-DAP/DAPLINK) or J-Link is installed. Please 
 
 Boards from the following product families use flash loaders that are supported.
 
-- [Feather M0](https://www.adafruit.com/feather)
+- [Feather M0/M4](https://www.adafruit.com/feather) and other Adafruit boards with UF2 bootloaders
 - [Teensy 3.x and LC](https://www.pjrc.com/teensy/)
 - STM32 DFU Bootloader
 
@@ -455,3 +455,31 @@ teensy-mcu = "mkl26z64" # Teensy LC
 ```
 
 Use 'teensy_loader_cli --list-mcus' to view a list of supported MCUs.
+
+### BOSSA
+
+If you have `bossac` 1.9 or later, or 1.8 and an M4 board, you may need to
+specify the offset address to start the flashing. This is because by default
+`bossac` will start flashing at address 0x0000, which is likely where your
+locked bootloader is located.
+
+These values seem to work for Adafruit M0/M4 devices with their UF2 bootloader,
+such as Feather M0/M4, Circuit Playground Express, and NeoTrellis M4:
+
+ * For M0 devices, use `--offset 0x2000`
+ * For M4 devices, use `--offset 0x4000`
+
+You can also specify this in the [loader] section of your .bobbin/config file:
+
+```
+[loader]
+offset = "0x2000" # M0
+```
+```
+[loader]
+offset = "0x4000" # M4
+```
+
+
+For more information about the UF2 bootloader and BOSSA, see Adafruit’s
+[UF2 Bootloader Details](https://learn.adafruit.com/adafruit-feather-m0-express-designed-for-circuit-python-circuitpython/uf2-bootloader-details) page.
