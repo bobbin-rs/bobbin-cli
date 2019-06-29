@@ -468,10 +468,18 @@ impl Device for FeatherDevice {
 
     #[cfg(target_os = "macos")]
     fn bossa_path(&self) -> Option<String> {
-        Some(format!("/dev/cu.usbmodem{}{}",
-            &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
-            1,
-        ))
+        // eprintln!("location id: 0x{:0x}", self.usb.location_id.unwrap());
+        if os_version_match("10.14") {
+            Some(format!("/dev/cu.usbmodem{}{}",
+                &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
+                1,
+            ))
+        } else {
+            Some(format!("/dev/cu.usbmodem{}{}",
+                &format!("{:x}", self.usb.location_id.unwrap_or(0))[..4],
+                1,
+            ))
+        }
     }
 }
 
