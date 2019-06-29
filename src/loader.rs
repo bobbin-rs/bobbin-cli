@@ -220,6 +220,8 @@ impl Load for BossaLoader {
 
         if let Some(offset) = cfg.offset(cmd_args) {
             cmd.arg("-o").arg(offset);
+        } else {
+            cmd.arg("-o").arg("0x2000");
         }
 
         cmd.arg(dst);
