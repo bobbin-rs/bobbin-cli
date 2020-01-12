@@ -1,3 +1,4 @@
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 use config::Config;
@@ -14,7 +15,11 @@ pub fn build_path(cfg: &Config, args: &ArgMatches, cmd_args: &ArgMatches) -> Res
         return Ok(PathBuf::from("--"))
     }
 
-    let mut dst = PathBuf::from("target");
+    let mut dst = if let Some(target) = env::var_os("CARGO_TARGET_DIR") {
+        PathBuf::from(target)
+    } else {
+        PathBuf::from("target")
+    };
 
     if let Some(t) = cmd_args.value_of("target") {
         dst.push(t)
